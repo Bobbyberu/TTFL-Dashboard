@@ -1,3 +1,14 @@
 venv/
-ttfl_dashboarda_pi.egg-info/
-__pycache__/
+config.py
+requirements.txt
+run.py
+instance/
+    config.py
+ttfl_dashboard_api/
+    __pycache__/
+    views.py
+    models.py
+    forms.py
+    static/
+    templates/
+ttfl_dashboard_api.egg-info/

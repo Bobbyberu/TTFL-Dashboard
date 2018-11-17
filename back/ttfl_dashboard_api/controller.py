@@ -1,5 +1,17 @@
-from ttfl_dashboard_api import app
+from flask import Blueprint, url_for, abort
+from nba_api.stats.endpoints import commonallplayers
 
-@app.route('/')
+controller = Blueprint('controller', __name__)
+api = '/api'
+
+@controller.route('/hello')
 def hello():
-    return 'hello'
+    return url_for('test')
+
+@controller.route(api)
+def apiFunction():
+    abort(404)
+
+@controller.route(api + '/allplayers')
+def allPlayers():
+    return commonallplayers.CommonAllPlayers('1', '00', '2018-19').get_json()
