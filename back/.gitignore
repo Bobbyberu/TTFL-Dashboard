@@ -1,14 +1,12 @@
-venv/
 config.py
 requirements.txt
 run.py
+venv/
 instance/
     config.py
 ttfl_dashboard_api/
     __pycache__/
-    views.py
-    models.py
     forms.py
     static/
     templates/
-ttfl_dashboard_api.egg-info/
+    !properties/
