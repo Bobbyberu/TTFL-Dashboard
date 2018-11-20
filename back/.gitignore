@@ -4,9 +4,5 @@ run.py
 venv/
 instance/
     config.py
-ttfl_dashboard_api/
-    __pycache__/
-    forms.py
-    static/
-    templates/
-    !properties/
+__pycache__/
+.vscode/
