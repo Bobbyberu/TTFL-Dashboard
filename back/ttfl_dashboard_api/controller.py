@@ -1,7 +1,7 @@
 from flask import Blueprint, url_for, abort, jsonify, Response
 from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard
 from properties.properties import APIProperty
-from parser import parse_all_teams, parse_all_players
+from parser import parse_all_teams, parse_all_players, parse_all_games
 
 controller = Blueprint('controller', __name__)
 api = '/api'
@@ -46,9 +46,12 @@ def allTeams():
 def getTeam(id_team):
     return teaminfocommon.TeamInfoCommon(league_id=APIProperty('LeagueID'), team_id=id_team).get_json()
 
-
+# boxscoretraditionalv2
 @controller.route(api+'/scoreboard/<year>/<month>/<day>')
 def getScoreboard(year, month, day):
-    separator = '-'
-    game_date = year + separator + month + separator + day
-    return scoreboard.Scoreboard(day_offset=0, league_id=APIProperty('LeagueID'), game_date=game_date).get_json();
+    response = Response(
+        response=parse_all_games(year=year, month=month, day=day),
+        status=200,
+        mimetype='application/json'
+    )
+    return response

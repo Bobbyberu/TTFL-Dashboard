@@ -1,8 +1,9 @@
 import json
 import time
-from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard
+import re
+from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard, boxscoretraditionalv2
 from properties.properties import APIProperty
-from models import Team, Player
+from models import Team, Player, Boxscore
 
 ######## COMMON FUNCTIONS ########
 
@@ -81,7 +82,7 @@ def parse_all_players():
     players = []
     for player in row_set:
         players = parse_player(headers, player, players)
-    
+
     return json.dumps(players)
 
 
@@ -90,8 +91,39 @@ def parse_player(headers, player_array, players):
     if(player_array[headers['GAMES_PLAYED_FLAG']] == 'Y'):
         has_played_games = True
     player = Player(player_array[headers['PERSON_ID']], player_array[headers['TEAM_ID']], player_array[headers['DISPLAY_FIRST_LAST']],
-        has_played_games)
+                    has_played_games)
     players.append(player.__dict__)
     return players
 
+#                       #
+
+
+# parsing for boxscore #
+def parse_all_games(year, month, day):
+    separator = '-'
+    game_date = year + separator + month + separator + day
+    raw_games = json.loads(scoreboard.Scoreboard(
+        day_offset=0, league_id=APIProperty('LeagueID'), game_date=game_date).get_json())
+    headers, row_set = get_result_set(
+        raw_json=raw_games, header_name='GameHeader')
+    games_id = get_ids(headers, 'GAME_ID', row_set)
+    all_game_perfs = []
+    for game in games_id:
+        time.sleep(0.5)
+        all_game_perfs = parse_game(game, all_game_perfs)
+    return json.dumps(all_game_perfs)
+
+
+def parse_game(game_id, all_game_perfs):
+    raw_boxscore = json.loads(boxscoretraditionalv2.BoxScoreTraditionalV2(
+        end_period=1, end_range=0, game_id=game_id, range_type=0, start_period=1, start_range=0).get_json())
+    headers, row_set = get_result_set(
+        raw_json=raw_boxscore, header_name='PlayerStats')
+    for game_perf in row_set:
+        if not game_perf[headers['COMMENT']]:
+            perf = Boxscore(game_perf[headers['PLAYER_ID']], game_perf[headers['GAME_ID']], game_perf[headers['PTS']], game_perf[headers['REB']], game_perf[headers['AST']], game_perf[headers['STL']], game_perf[headers['BLK']],
+                            game_perf[headers['TO']], game_perf[headers['FGA']], game_perf[headers['FGM']], game_perf[headers['FG3A']], game_perf[headers['FG3M']], game_perf[headers['FTA']], game_perf[headers['FTM']], game_perf[headers['PLAYER_NAME']])
+            all_game_perfs.append(perf.__dict__)
+
+    return all_game_perfs
 #                       #
