@@ -1,7 +1,7 @@
 from flask import Blueprint, url_for, abort, jsonify, Response
 from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard
 from properties.properties import APIProperty
-from parser import parse_all_teams
+from parser import parse_all_teams, parse_all_players
 
 controller = Blueprint('controller', __name__)
 api = '/api'
@@ -18,8 +18,13 @@ def apiFunction():
 
 
 @controller.route(api + '/allplayers')
-def allPlayers():
-    return commonallplayers.CommonAllPlayers('1', APIProperty('LeagueID'), APIProperty('CurrentSeason')).get_json()
+def allPlayers():    
+    response = Response(
+        response=parse_all_players(),
+        status=200,
+        mimetype='application/json'
+    )
+    return response
 
 
 @controller.route(api + '/player/<id_player>')

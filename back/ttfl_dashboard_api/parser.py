@@ -2,7 +2,7 @@ import json
 import time
 from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard
 from properties.properties import APIProperty
-from models import Team
+from models import Team, Player
 
 ######## COMMON FUNCTIONS ########
 
@@ -55,15 +55,43 @@ def parse_all_teams():
 
 
 def parse_team(id_team, teams):
-    time.sleep(0.5)
+    # if too much requests sent, nba_api block you for a little amoiht of time
+    time.sleep(1)
     raw_team = json.loads(teaminfocommon.TeamInfoCommon(
         league_id=APIProperty('LeagueID'), team_id=id_team).get_json())
     headers, row_set = get_result_set(raw_team, "TeamInfoCommon")
     if row_set:
+        # only the first row_set contains player information
         data = row_set[0]
         team = Team(data[headers['TEAM_ID']], data[headers['TEAM_CITY']], data[headers['TEAM_NAME']], data[headers['TEAM_ABBREVIATION']],
-                          data[headers['TEAM_CONFERENCE']], data[headers['TEAM_DIVISION']], data[headers['W']], data[headers['L']]).__dict__
+                    data[headers['TEAM_CONFERENCE']], data[headers['TEAM_DIVISION']], data[headers['W']], data[headers['L']]).__dict__
         print(team)
         teams.append(team)
     return teams
+#                       #
+
+# parsing for players #
+
+
+def parse_all_players():
+    all_players_raw = json.loads(commonallplayers.CommonAllPlayers(
+        is_only_current_season='1', league_id=APIProperty('LeagueID'), season=APIProperty('CurrentSeason')).get_json())
+    headers, row_set = get_result_set(all_players_raw)
+
+    players = []
+    for player in row_set:
+        players = parse_player(headers, player, players)
+    
+    return json.dumps(players)
+
+
+def parse_player(headers, player_array, players):
+    has_played_games = False
+    if(player_array[headers['GAMES_PLAYED_FLAG']] == 'Y'):
+        has_played_games = True
+    player = Player(player_array[headers['PERSON_ID']], player_array[headers['TEAM_ID']], player_array[headers['DISPLAY_FIRST_LAST']],
+        has_played_games)
+    players.append(player.__dict__)
+    return players
+
 #                       #
