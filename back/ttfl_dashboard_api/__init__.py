@@ -1,5 +1,11 @@
 from flask import Flask, abort
 from ttfl_dashboard_api.controller import controller
+from properties.properties import DbProperty
+from peewee import *
+
+db = MySQLDatabase(DbProperty('name'), user=DbProperty('user'),
+                   password=DbProperty('pwd'), host=DbProperty('host'), port=DbProperty('port', True))
+db.connect()
 
 app = Flask(__name__)
 app.register_blueprint(controller)
