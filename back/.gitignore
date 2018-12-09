@@ -6,3 +6,4 @@ instance/
     config.py
 __pycache__/
 .vscode/
+properties/properties.ini
