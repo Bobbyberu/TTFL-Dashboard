@@ -55,3 +55,9 @@ def getScoreboard(year, month, day):
         mimetype='application/json'
     )
     return response
+
+'''night = parse_all_games(year='2018', month='12', day='9')
+for boxscore in night:
+    save(boxscore)'''
+
+#parse_all_teams()

@@ -3,7 +3,7 @@ import time
 import re
 from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard, boxscoretraditionalv2
 from properties.properties import APIProperty
-from models import Team, Player, Boxscore
+from db_models import Team, Player, Boxscore, create_boxscore
 
 ######## COMMON FUNCTIONS ########
 
@@ -52,7 +52,8 @@ def parse_all_teams():
     for team_id in teams_id:
         teams = parse_team(team_id, teams)
 
-    return json.dumps(teams)
+    #return json.dumps(teams)
+    return teams
 
 
 def parse_team(id_team, teams):
@@ -64,9 +65,9 @@ def parse_team(id_team, teams):
     if row_set:
         # only the first row_set contains player information
         data = row_set[0]
-        team = Team(data[headers['TEAM_ID']], data[headers['TEAM_CITY']], data[headers['TEAM_NAME']], data[headers['TEAM_ABBREVIATION']],
-                    data[headers['TEAM_CONFERENCE']], data[headers['TEAM_DIVISION']], data[headers['W']], data[headers['L']]).__dict__
-        print(team)
+        team = Team(id=int(data[headers['TEAM_ID']]), city=data[headers['TEAM_CITY']], name=data[headers['TEAM_NAME']], abbreviation=data[headers['TEAM_ABBREVIATION']],
+                    conference=data[headers['TEAM_CONFERENCE']], division=data[headers['TEAM_DIVISION']], wins=int(data[headers['W']]), losses=int(data[headers['L']]))
+        print(data[headers['TEAM_ID']])
         teams.append(team)
     return teams
 #                       #
@@ -83,7 +84,8 @@ def parse_all_players():
     for player in row_set:
         players = parse_player(headers, player, players)
 
-    return json.dumps(players)
+    #return json.dumps(players)
+    return players
 
 
 def parse_player(headers, player_array, players):
@@ -111,7 +113,8 @@ def parse_all_games(year, month, day):
     for game in games_id:
         time.sleep(0.5)
         all_game_perfs = parse_game(game, all_game_perfs)
-    return json.dumps(all_game_perfs)
+    #return json.dumps(all_game_perfs)
+    return all_game_perfs
 
 
 def parse_game(game_id, all_game_perfs):
@@ -121,9 +124,9 @@ def parse_game(game_id, all_game_perfs):
         raw_json=raw_boxscore, header_name='PlayerStats')
     for game_perf in row_set:
         if not game_perf[headers['COMMENT']]:
-            perf = Boxscore(game_perf[headers['PLAYER_ID']], game_perf[headers['GAME_ID']], game_perf[headers['PTS']], game_perf[headers['REB']], game_perf[headers['AST']], game_perf[headers['STL']], game_perf[headers['BLK']],
-                            game_perf[headers['TO']], game_perf[headers['FGA']], game_perf[headers['FGM']], game_perf[headers['FG3A']], game_perf[headers['FG3M']], game_perf[headers['FTA']], game_perf[headers['FTM']], game_perf[headers['PLAYER_NAME']])
-            all_game_perfs.append(perf.__dict__)
+            perf = create_boxscore(game_perf[headers['PLAYER_ID']], game_perf[headers['GAME_ID']], game_perf[headers['PTS']], game_perf[headers['REB']], game_perf[headers['AST']], game_perf[headers['STL']], game_perf[headers['BLK']],
+                                             game_perf[headers['TO']], game_perf[headers['FGA']], game_perf[headers['FGM']], game_perf[headers['FG3A']], game_perf[headers['FG3M']], game_perf[headers['FTA']], game_perf[headers['FTM']], game_perf[headers['PLAYER_NAME']])
+            all_game_perfs.append(perf)
 
     return all_game_perfs
 #                       #
