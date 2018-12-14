@@ -1,7 +1,6 @@
 from flask import Blueprint, url_for, abort, jsonify, Response
 from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard
 from properties.properties import APIProperty
-from parser import parse_all_teams, parse_all_players, parse_all_games
 
 controller = Blueprint('controller', __name__)
 api = '/api'
