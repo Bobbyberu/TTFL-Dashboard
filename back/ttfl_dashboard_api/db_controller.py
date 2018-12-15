@@ -61,7 +61,8 @@ def get_all_games(year: int, month: int, day: int):
     """
     Select all games from database at given date
     """
-    return Game.select().where(Game.date == datetime(year=year, month=month, day=day))
+    games = Game.select().where(Game.date == datetime(year=year, month=month, day=day))
+    return [game.id for game in games]
 
 
 def insert_all_boxscores(year: int, month: int, day: int):
@@ -74,13 +75,25 @@ def insert_all_boxscores(year: int, month: int, day: int):
     games = get_all_games(year=year, month=month, day=day)
 
     for game in games:
-        is_game_in_table = not Boxscore.select().where(Boxscore.game == game.id)
+        is_game_in_table = not Boxscore.select().where(Boxscore.game == game.id).exists()
         game_boxscores = parse_boxscores(game.id)
         [boxscore.save(force_insert=is_game_in_table)
          for boxscore in game_boxscores]
         time.sleep(1)
 
     print('boxscores inserted')
+
+
+def get_all_boxscores(year: int, month: int, day: int):
+    """
+    Return all boxscores at given date
+    """
+    if(not is_date_passed(year, month, day)):
+        return None
+
+    games = get_all_games(year=year, month=month, day=day)
+    boxscores = Boxscore.select().where(Boxscore.game in games).order_by(Boxscore.ttfl_score.desc())
+    return boxscores
 
 
 def get_ttfl_scores(year: int, month: int, day: int):
@@ -102,3 +115,8 @@ def initialize_database(year: int, month: int, day: int):
     insert_all_teams()
     insert_all_players()
     insert_all_boxscores(year, month, day)
+
+def test():
+    games = Game.select()
+    print([game.id for game in games])
+    #[print(boxscore) for boxscore in boxscores]
