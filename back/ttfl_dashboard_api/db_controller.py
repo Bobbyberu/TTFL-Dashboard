@@ -38,6 +38,12 @@ def insert_all_players():
             player[0].save(force_insert=is_table_empty)
     print('players inserted')
 
+def get_all_players():
+    """
+    Return all current nba players
+    """
+    return Player.select().order_by(Player.name)
+
 
 def are_games_inserted(year: int, month: int, day: int):
     """
