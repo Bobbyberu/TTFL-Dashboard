@@ -1,11 +1,4 @@
-import time
-import re
-from datetime import datetime, date
-from dateutil.parser import parse
-
-
-def string_to_date(date):
-    return parse(date)
+from datetime import datetime
 
 
 def get_date(year, month, day):
@@ -25,4 +18,4 @@ def format_game_id(game_id: str) -> str:
 
 
 def is_date_passed(year, month, day):
-    return get_date(year=year, month=month, day=day) <= datetime.now()
+    return datetime(year=year, month=month, day=day) <= datetime.now()

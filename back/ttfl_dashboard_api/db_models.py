@@ -1,6 +1,7 @@
 from properties.properties import DbProperty
 from peewee import Model, CharField, IntegerField, BooleanField, MySQLDatabase, ForeignKeyField, DateField, CompositeKey
 
+# connection to database
 db = MySQLDatabase(DbProperty('name'), user=DbProperty('user'),
                    password=DbProperty('pwd'), host=DbProperty('host'), port=DbProperty('port', True))
 db.connect()
@@ -57,11 +58,10 @@ class Boxscore(BaseModel):
     class Meta:
         primary_key = CompositeKey('player', 'game')
         database = db
-    # self.ttlf_score = pts + reb + ast + stl + blk - \
-    #    to + (fgm-(fga-fgm)) + (fg3m-(fg3a-fg3m)) + (ftm-(fta-ftm))
 
 
 def create_boxscore(id_player, id_game, pts, reb, ast, stl, blk, to, fga, fgm, fg3a, fg3m, fta, ftm, name):
+    # calculate ttfl score from player's stats
     ttfl_score = pts + reb + ast + stl + blk - to + \
         (fgm-(fga-fgm)) + (fg3m-(fg3a-fg3m)) + (ftm-(fta-ftm))
     return Boxscore(player_id=id_player,

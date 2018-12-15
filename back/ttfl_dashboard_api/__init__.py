@@ -1,7 +1,8 @@
 from flask import Flask, abort
 from ttfl_dashboard_api.controller import controller
-from ttfl_dashboard_api.db_controller import create_tables, insert_all_teams, insert_all_players, insert_all_games, get_all_games, insert_all_boxscores, get_ttfl_scores
+from ttfl_dashboard_api.db_controller import initialize_database, get_ttfl_scores
 from peewee import *
+import time
 
 app = Flask(__name__)
 app.config['TESTING'] = True
@@ -12,5 +13,7 @@ app.register_blueprint(controller)
 
 
 if __name__ == "__main__":
-    create_tables()
+    start_time = time.time()
+    initialize_database(2018,12,13)
+    print("--- %s seconds ---" % (time.time() - start_time))
     app.run(use_reloader=False)

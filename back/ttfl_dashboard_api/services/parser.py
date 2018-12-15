@@ -3,12 +3,16 @@ import time
 from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard, boxscoretraditionalv2
 from properties.properties import APIProperty
 from db_models import Team, Player, Game, Boxscore, create_boxscore
-from services.utils import string_to_date, format_game_id
+from services.utils import format_game_id
+from dateutil.parser import parse
 
 ######## COMMON FUNCTIONS ########
 
 
-def get_result_set(raw_json, header_name=None):
+def get_result_set(raw_json: str, header_name=None):
+    """
+    Get data from a certain header from NBA API
+    """
     # headers contains the name of each field the API returns
     result_sets_raw = raw_json['resultSets']
 
@@ -31,6 +35,9 @@ def get_result_set(raw_json, header_name=None):
 
 
 def get_ids(headers, id_field, data):
+    """
+    Get only IDs from row_set
+    """
     indexes = []
     index_id = headers[id_field]
     for i in range(len(data)):
@@ -66,7 +73,7 @@ def parse_team(id_team, teams):
     if row_set:
         # only the first row_set contains player information
         data = row_set[0]
-        team = Team(id=int(data[headers['TEAM_ID']]), city='Lyon', name=data[headers['TEAM_NAME']], abbreviation=data[headers['TEAM_ABBREVIATION']],
+        team = Team(id=int(data[headers['TEAM_ID']]), city=data[headers['TEAM_CITY']], name=data[headers['TEAM_NAME']], abbreviation=data[headers['TEAM_ABBREVIATION']],
                     conference=data[headers['TEAM_CONFERENCE']], division=data[headers['TEAM_DIVISION']], wins=int(data[headers['W']]), losses=int(data[headers['L']]))
         teams.append(team)
     return teams
@@ -87,12 +94,10 @@ def parse_all_players():
     return players
 
 
-'''
-    Will return a tuple (player, team_id) to help build the foreign key
-'''
-
-
 def parse_player(headers, player_array, players):
+    """
+    Will return a tuple (player, team_id) to help build the foreign key
+    """
     has_played_games = False
     if(player_array[headers['GAMES_PLAYED_FLAG']] == 'Y'):
         has_played_games = True
@@ -112,27 +117,18 @@ def parse_all_games(year, month, day):
         day_offset=0, league_id=APIProperty('LeagueID'), game_date=game_date).get_json())
     headers, row_set = get_result_set(
         raw_json=raw_games, header_name='GameHeader')
-    games_id = get_ids(headers, 'GAME_ID', row_set)
     games = []
     for game in row_set:
         parsed_game = Game(id=game[headers['GAME_ID']], home_team=game[headers['HOME_TEAM_ID']],
-                           visitor_team=game[headers['VISITOR_TEAM_ID']], date=string_to_date(game[headers['GAME_DATE_EST']]))
+                           visitor_team=game[headers['VISITOR_TEAM_ID']], date=parse(game[headers['GAME_DATE_EST']]))
         games.append(parsed_game)
-    '''all_game_perfs = []
-    for game in games_id:
-        time.sleep(0.5)
-        all_game_perfs = parse_game(game, all_game_perfs)
-    # return json.dumps(all_game_perfs)
-    return all_game_perfs'''
     return games
 
 
-'''
-    Get and parse all players stats at one given game
-'''
-
-
 def parse_boxscores(game_id):
+    """
+    Get and parse all players stats at one given game
+    """
     all_game_perfs = []
     raw_boxscore = json.loads(boxscoretraditionalv2.BoxScoreTraditionalV2(
         end_period=1, end_range=0, game_id=format_game_id(str(game_id)), range_type=0, start_period=1, start_range=0).get_json())
