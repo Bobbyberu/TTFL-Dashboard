@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard, boxscoretraditionalv2
 from properties.properties import APIProperty
 from db_models import Team, Player, Game, Boxscore, create_boxscore
@@ -134,32 +135,36 @@ def parse_boxscores(year, month, day, game_id):
     """
     all_game_perfs = []
     game_stats = json.loads(get_json_boxscore_api(year, month, day, game_id))
-    
-    # Change game live status if it's ongoing
-    query_game_live = Game.update(is_game_live = is_game_live(game_stats)).where(Game.id == game_id)
-    query_game_live.execute()
 
-    player_stats = game_stats['stats']['activePlayers']
-    for boxscore in player_stats:
-        # check if the player has played the game
-        dnp = False
-        if boxscore['dnp']:
-            dnp = True
-        perf = create_boxscore(format_stat(boxscore['personId']), game_id, dnp, boxscore['min'],
-                               format_stat(boxscore['points']),
-                               format_stat(boxscore['totReb']),
-                               format_stat(boxscore['assists']),
-                               format_stat(boxscore['steals']),
-                               format_stat(boxscore['blocks']),
-                               format_stat(boxscore['turnovers']),
-                               format_stat(boxscore['fga']),
-                               format_stat(boxscore['fgm']),
-                               format_stat(boxscore['tpa']),
-                               format_stat(boxscore['tpm']),
-                               format_stat(boxscore['fta']),
-                               format_stat(boxscore['ftm']))
-        all_game_perfs.append(perf)
+    # Change game live status if it's ongoing
+    query_game_live = Game.update(is_game_live=is_game_live(
+        game_stats)).where(Game.id == game_id)
+    query_game_live.execute()
+    game_start_UTC = parse(game_stats['basicGameData']['startTimeUTC']).replace(tzinfo=None)
+    # do not parse the boxscore if game has not started yet
+    if datetime.utcnow() >= game_start_UTC:
+        player_stats = game_stats['stats']['activePlayers']
+        for boxscore in player_stats:
+            # check if the player has played the game
+            dnp = False
+            if boxscore['dnp']:
+                dnp = True
+            perf = create_boxscore(format_stat(boxscore['personId']), game_id, dnp, boxscore['min'],
+                                   format_stat(boxscore['points']),
+                                   format_stat(boxscore['totReb']),
+                                   format_stat(boxscore['assists']),
+                                   format_stat(boxscore['steals']),
+                                   format_stat(boxscore['blocks']),
+                                   format_stat(boxscore['turnovers']),
+                                   format_stat(boxscore['fga']),
+                                   format_stat(boxscore['fgm']),
+                                   format_stat(boxscore['tpa']),
+                                   format_stat(boxscore['tpm']),
+                                   format_stat(boxscore['fta']),
+                                   format_stat(boxscore['ftm']))
+            all_game_perfs.append(perf)
     return all_game_perfs
+
 
 def is_game_live(game_stats_json):
     """
