@@ -3,7 +3,7 @@ import time
 from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard, boxscoretraditionalv2
 from properties.properties import APIProperty
 from db_models import Team, Player, Game, Boxscore, create_boxscore
-from services.utils import format_game_id
+from services.utils import format_game_id, get_json_boxscore_api, format_stat
 from dateutil.parser import parse
 
 ######## COMMON FUNCTIONS ########
@@ -124,24 +124,47 @@ def parse_all_games(year, month, day):
         games.append(parsed_game)
     return games
 
- #                          #
+#                       #
 
 
- # parsing for boxscore #
-def parse_boxscores(game_id):
+# parsing for boxscore #
+def parse_boxscores(year, month, day, game_id):
     """
     Get and parse all players stats at one given game
     """
     all_game_perfs = []
-    raw_boxscore = json.loads(boxscoretraditionalv2.BoxScoreTraditionalV2(
-        end_period=1, end_range=0, game_id=format_game_id(str(game_id)), range_type=0, start_period=1, start_range=0).get_json())
-    headers, row_set = get_result_set(
-        raw_json=raw_boxscore, header_name='PlayerStats')
-    for game_perf in row_set:
-        # check that the player has played during the game
-        if not game_perf[headers['COMMENT']]:
-            perf = create_boxscore(game_perf[headers['PLAYER_ID']], game_perf[headers['GAME_ID']], game_perf[headers['PTS']], game_perf[headers['REB']], game_perf[headers['AST']], game_perf[headers['STL']], game_perf[headers['BLK']],
-                                   game_perf[headers['TO']], game_perf[headers['FGA']], game_perf[headers['FGM']], game_perf[headers['FG3A']], game_perf[headers['FG3M']], game_perf[headers['FTA']], game_perf[headers['FTM']], game_perf[headers['PLAYER_NAME']])
-            all_game_perfs.append(perf)
+    game_stats = json.loads(get_json_boxscore_api(year, month, day, game_id))
+    
+    # Change game live status if it's ongoing
+    query_game_live = Game.update(is_game_live = is_game_live(game_stats)).where(Game.id == game_id)
+    query_game_live.execute()
+
+    player_stats = game_stats['stats']['activePlayers']
+    for boxscore in player_stats:
+        # check if the player has played the game
+        dnp = False
+        if boxscore['dnp']:
+            dnp = True
+        perf = create_boxscore(format_stat(boxscore['personId']), game_id, dnp, boxscore['min'],
+                               format_stat(boxscore['points']),
+                               format_stat(boxscore['totReb']),
+                               format_stat(boxscore['assists']),
+                               format_stat(boxscore['steals']),
+                               format_stat(boxscore['blocks']),
+                               format_stat(boxscore['turnovers']),
+                               format_stat(boxscore['fga']),
+                               format_stat(boxscore['fgm']),
+                               format_stat(boxscore['tpa']),
+                               format_stat(boxscore['tpm']),
+                               format_stat(boxscore['fta']),
+                               format_stat(boxscore['ftm']))
+        all_game_perfs.append(perf)
     return all_game_perfs
+
+def is_game_live(game_stats_json):
+    """
+    Return True if game is ongoing
+    """
+    basic_game_data = game_stats_json['basicGameData']
+    return basic_game_data['isGameActivated']
 #                       #

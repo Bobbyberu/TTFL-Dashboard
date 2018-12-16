@@ -36,11 +36,14 @@ class Game(BaseModel):
     home_team = ForeignKeyField(Team, backref='games')
     visitor_team = ForeignKeyField(Team, backref='games')
     date = DateField()
+    is_game_live = BooleanField(default=False)
 
 
 class Boxscore(BaseModel):
     player = ForeignKeyField(Player, backref='boxscores')
     game = ForeignKeyField(Game, backref='boxscores')
+    min = CharField(default='0:00')
+    dnp = BooleanField()
     pts = IntegerField()
     reb = IntegerField()
     ast = IntegerField()
@@ -49,8 +52,8 @@ class Boxscore(BaseModel):
     to = IntegerField()
     fga = IntegerField()
     fgm = IntegerField()
-    fg3a = IntegerField()
-    fg3m = IntegerField()
+    tpa = IntegerField()
+    tpm = IntegerField()
     fta = IntegerField()
     ftm = IntegerField()
     ttfl_score = IntegerField()
@@ -60,22 +63,26 @@ class Boxscore(BaseModel):
         database = db
 
 
-def create_boxscore(id_player, id_game, pts, reb, ast, stl, blk, to, fga, fgm, fg3a, fg3m, fta, ftm, name):
+def create_boxscore(id_player, id_game, dnp, min, pts, reb, ast, stl, blk, to, fga, fgm, tpa, tpm, fta, ftm):
     # calculate ttfl score from player's stats
     ttfl_score = pts + reb + ast + stl + blk - to + \
-        (fgm-(fga-fgm)) + (fg3m-(fg3a-fg3m)) + (ftm-(fta-ftm))
-    return Boxscore(player_id=id_player,
-                    game_id=id_game,
-                    pts=pts,
-                    reb=reb,
-                    ast=ast,
-                    stl=stl,
-                    blk=blk,
-                    to=to,
-                    fga=fga,
-                    fgm=fgm,
-                    fg3a=fg3a,
-                    fg3m=fg3m,
-                    fta=fta,
-                    ftm=ftm,
-                    ttfl_score=ttfl_score)
+        (fgm-(fga-fgm)) + (tpm-(tpa-tpm)) + (ftm-(fta-ftm))
+    boxscore = Boxscore(player_id=id_player,
+                        game_id=id_game,
+                        dnp=dnp,
+                        pts=pts,
+                        reb=reb,
+                        ast=ast,
+                        stl=stl,
+                        blk=blk,
+                        to=to,
+                        fga=fga,
+                        fgm=fgm,
+                        tpa=tpa,
+                        tpm=tpm,
+                        fta=fta,
+                        ftm=ftm,
+                        ttfl_score=ttfl_score)
+    if min:
+        boxscore.min = min
+    return boxscore

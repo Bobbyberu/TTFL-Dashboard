@@ -1,6 +1,7 @@
 import json
 from flask import Blueprint, url_for, abort, jsonify, Response
 from db_controller import get_all_boxscores, get_all_players
+from services.utils import get_json_boxscore_api
 
 api_controller = Blueprint('api_controller', __name__)
 api = '/api'
@@ -10,12 +11,21 @@ api = '/api'
 def apiFunction():
     abort(404)
 
+@api_controller.route('/test')
+def test():
+    contents = json.loads(get_json_boxscore_api(2018, 11, 15, 21800213))
+    contents = json.dumps(contents['stats']['activePlayers'])
+    response = Response(
+        response=contents,
+        status=200,
+        mimetype='application/json'
+    )
+    return response
+
 
 @api_controller.route(api+'/players')
 def get_players():
     all_players = get_all_players()
-    # json_response = json.dumps([player.__dict__['__data__']
-    #                           for player in all_players])
     json_response = build_valid_json(
         [player.__dict__['__data__'] for player in all_players])
     response = Response(

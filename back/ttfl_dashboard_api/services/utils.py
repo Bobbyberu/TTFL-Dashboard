@@ -1,4 +1,5 @@
 from datetime import datetime
+from urllib import request
 
 
 def get_date(year, month, day):
@@ -19,3 +20,24 @@ def format_game_id(game_id: str) -> str:
 
 def is_date_passed(year, month, day):
     return datetime(year=year, month=month, day=day) <= datetime.now()
+
+def build_url_boxscores(year: int, month: int, day: int, game_id: int) -> str:
+    """
+    Build proper data.nba.net url to be called to retrieve live boxscores
+    """
+    base = 'https://data.nba.net/prod/v1/'
+    end = '_boxscore.json'
+    date = str(year) + str(month) + str(day)
+    return base + date + '/' + format_game_id(str(game_id)) + end
+
+def get_json_boxscore_api(year, month, day, game_id):
+    return request.urlopen(build_url_boxscores(year, month, day, game_id)).read()
+
+
+def format_stat(stat):
+    """
+    Parse stat to int or return 0 if stat is unsepcified
+    """
+    if not stat:
+        return 0
+    return int(stat)
