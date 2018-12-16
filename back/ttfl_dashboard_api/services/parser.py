@@ -109,7 +109,7 @@ def parse_player(headers, player_array, players):
 #                       #
 
 
-# parsing for boxscore #
+# parsing for games #
 def parse_all_games(year, month, day):
     separator = '-'
     game_date = str(year) + separator + str(month) + separator + str(day)
@@ -124,7 +124,10 @@ def parse_all_games(year, month, day):
         games.append(parsed_game)
     return games
 
+ #                          #
 
+
+ # parsing for boxscore #
 def parse_boxscores(game_id):
     """
     Get and parse all players stats at one given game
