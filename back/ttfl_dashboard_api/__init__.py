@@ -13,5 +13,6 @@ app.register_blueprint(api_controller)
 
 
 if __name__ == "__main__":
-    initialize_database(2018, 12, 15)
+    #initialize_database(2018, 12, 15)
+    #test()
     app.run(use_reloader=False)

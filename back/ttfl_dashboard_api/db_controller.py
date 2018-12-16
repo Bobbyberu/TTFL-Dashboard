@@ -18,8 +18,7 @@ def insert_all_teams():
     """
     teams = parse_all_teams()
     is_table_empty = not Team.select().exists()
-    for team in teams:
-        team.save(force_insert=is_table_empty)
+    [team.save(force_insert=is_table_empty) for team in teams]
     print('teams inserted')
 
 
@@ -38,13 +37,6 @@ def insert_all_players():
     print('players inserted')
 
 
-def get_all_players():
-    """
-    Return all current nba players
-    """
-    return Player.select().order_by(Player.name)
-
-
 def are_games_inserted(year: int, month: int, day: int):
     """
     Check if games at given date have already been inserted in database
@@ -58,8 +50,7 @@ def insert_all_games(year: int, month: int, day: int):
     """
     games = parse_all_games(year, month, day)
     should_insert = not get_all_games(year, month, day)
-    for game in games:
-        game.save(force_insert=should_insert)
+    [game.save(force_insert=should_insert) for game in games]
     print('games inserted')
 
 
@@ -98,7 +89,7 @@ def get_all_boxscores(year: int, month: int, day: int):
 
     games = get_all_games(year, month, day)
     boxscores = Boxscore.select().where(
-        Boxscore.game in games).order_by(Boxscore.ttfl_score.desc())
+        Boxscore.game.in_(games)).order_by(Boxscore.ttfl_score.desc())
     return boxscores
 
 
@@ -124,6 +115,6 @@ def initialize_database(year: int, month: int, day: int):
 
 
 def test():
-    games = Game.select()
-    print([game.id for game in games])
+    player = get_player_by_id(2544)
+    print(player.__dict__['__data__'])
     #[print(boxscore) for boxscore in boxscores]
