@@ -100,12 +100,35 @@ def parse_player(headers, player_array, players):
     Will return a tuple (player, team_id) to help build the foreign key
     """
     has_played_games = False
+    # check if the player has already played at least one game
     if(player_array[headers['GAMES_PLAYED_FLAG']] == 'Y'):
         has_played_games = True
     player = (Player(id=player_array[headers['PERSON_ID']], name=player_array[headers['DISPLAY_FIRST_LAST']],
                      has_played_games=has_played_games), player_array[headers['TEAM_ID']])
     players.append(player)
     return players
+
+
+def parse_common_player_info(player_id: str):
+    """
+    Parse player info from CommonPlayerInfo endpoint
+    """
+    player_json = json.loads(
+        commonplayerinfo.CommonPlayerInfo(player_id=player_id).get_json())
+    headers, row_set = get_result_set(player_json, 'CommonPlayerInfo')
+
+    if row_set:
+        data = row_set[0]
+        # check if the player has already played at least one game
+        has_played_games = False
+        if(data[headers['GAMES_PLAYED_FLAG']] == 'Y'):
+            has_played_games = True
+        print(data[headers['PERSON_ID']])
+        return Player(id=int(data[headers['PERSON_ID']]), team=int(data[headers['TEAM_ID']]),
+                    name=data[headers['DISPLAY_FIRST_LAST']], has_played_games=has_played_games)
+    else:
+        return None
+
 
 #                       #
 
@@ -140,7 +163,8 @@ def parse_boxscores(year, month, day, game_id):
     query_game_live = Game.update(is_game_live=is_game_live(
         game_stats)).where(Game.id == game_id)
     query_game_live.execute()
-    game_start_UTC = parse(game_stats['basicGameData']['startTimeUTC']).replace(tzinfo=None)
+    game_start_UTC = parse(
+        game_stats['basicGameData']['startTimeUTC']).replace(tzinfo=None)
     # do not parse the boxscore if game has not started yet
     if datetime.utcnow() >= game_start_UTC:
         player_stats = game_stats['stats']['activePlayers']
@@ -149,6 +173,11 @@ def parse_boxscores(year, month, day, game_id):
             dnp = False
             if boxscore['dnp']:
                 dnp = True
+
+            # if player is not in database, insert it
+            if not Player.select().where(Player.id == format_stat(boxscore['personId'])):
+                parse_common_player_info(boxscore['personId']).save(force_insert=True)
+
             perf = create_boxscore(format_stat(boxscore['personId']), game_id, dnp, boxscore['min'],
                                    format_stat(boxscore['points']),
                                    format_stat(boxscore['totReb']),
@@ -162,6 +191,7 @@ def parse_boxscores(year, month, day, game_id):
                                    format_stat(boxscore['tpm']),
                                    format_stat(boxscore['fta']),
                                    format_stat(boxscore['ftm']))
+
             all_game_perfs.append(perf)
     return all_game_perfs
 

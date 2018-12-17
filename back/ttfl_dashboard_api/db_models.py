@@ -63,12 +63,12 @@ class Boxscore(BaseModel):
         database = db
 
 
-def create_boxscore(id_player, id_game, dnp, min, pts, reb, ast, stl, blk, to, fga, fgm, tpa, tpm, fta, ftm):
+def create_boxscore(player_id, game_id, dnp, min, pts, reb, ast, stl, blk, to, fga, fgm, tpa, tpm, fta, ftm):
     # calculate ttfl score from player's stats
     ttfl_score = pts + reb + ast + stl + blk - to + \
         (fgm-(fga-fgm)) + (tpm-(tpa-tpm)) + (ftm-(fta-ftm))
-    boxscore = Boxscore(player_id=id_player,
-                        game_id=id_game,
+    boxscore = Boxscore(player_id=player_id,
+                        game_id=game_id,
                         dnp=dnp,
                         pts=pts,
                         reb=reb,
@@ -83,6 +83,8 @@ def create_boxscore(id_player, id_game, dnp, min, pts, reb, ast, stl, blk, to, f
                         fta=fta,
                         ftm=ftm,
                         ttfl_score=ttfl_score)
+    # set field only if it exists
     if min:
         boxscore.min = min
+
     return boxscore

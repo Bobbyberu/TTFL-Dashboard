@@ -70,7 +70,6 @@ def insert_all_boxscores(year: int, month: int, day: int):
     if is_date_passed(year, month, day) and not get_all_games(year, month, day):
         insert_all_games(year, month, day)
     games = get_all_games(year, month, day)
-
     for game in games:
         is_game_in_table = not Boxscore.select().where(Boxscore.game == game).exists()
         game_boxscores = parse_boxscores(year, month, day, game)
@@ -110,7 +109,7 @@ def initialize_database(year: int, month: int, day: int):
     """
     create_tables()
     # insert_all_teams()
-    # insert_all_players()
+    #insert_all_players()
     insert_all_boxscores(year, month, day)
 
 
