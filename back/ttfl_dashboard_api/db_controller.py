@@ -114,6 +114,7 @@ def initialize_database(year: int, month: int, day: int):
 
 
 def test():
-    player = get_player_by_id(2544)
-    print(player.__dict__['__data__'])
+    test = Boxscore.select().where(Boxscore.player == 2544).dicts()
+
+    print([print(row) for row in test])
     #[print(boxscore) for boxscore in boxscores]
