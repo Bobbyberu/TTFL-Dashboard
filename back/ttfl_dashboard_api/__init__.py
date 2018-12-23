@@ -14,7 +14,7 @@ app.register_blueprint(api_controller)
 
 if __name__ == "__main__":
     #start_time = time.time()
-    #initialize_database(2018, 12, 21)
+    #initialize_database(2018, 12, 22)
     #print("--- %s seconds ---" % (time.time() - start_time))
     #test()
     app.run(use_reloader=True)

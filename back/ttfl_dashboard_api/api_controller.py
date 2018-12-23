@@ -32,10 +32,10 @@ def get_teams():
     """
     Return all current nba teams
     """
-    all_teams = Team.select()
+    all_teams = Team.select().dicts()
     if all_teams:
         json_response = build_valid_json(
-            [team.__dict__['__data__'] for team in all_teams])
+            [team for team in all_teams])
         status = 200
     else:
         json_response = build_error_json('No team were found')
@@ -65,10 +65,10 @@ def get_players():
     """
     Return all current nba players
     """
-    all_players = Player.select().order_by(Player.name)
+    all_players = Player.select().order_by(Player.name).dicts()
     if all_players:
         json_response = build_valid_json(
-            [player.__dict__['__data__'] for player in all_players])
+            [player for player in all_players])
         status = 200
     else:
         json_response = build_error_json('No player were found')
@@ -98,10 +98,10 @@ def get_player_by_name(name: str):
     """
     Return a player or a list of players with corresponding name
     """
-    players = Player.select().where(Player.name.contains(name))
+    players = Player.select().where(Player.name.contains(name)).dicts()
     if players:
         json_response = build_valid_json(
-            [player.__dict__['__data__'] for player in players])
+            [player for player in players])
         status = 200
     else:
         json_response = build_error_json('No player found')
@@ -115,10 +115,10 @@ def get_team_players(id: int):
     """
     Return all players in given team
     """
-    players = Player.select().where(Player.team == id)
+    players = Player.select().where(Player.team == id).dicts()
     if players:
         json_response = build_valid_json(
-            [player.__dict__['__data__'] for player in players])
+            [player for player in players])
         status = 200
     else:
         json_response = build_error_json('No team found')
@@ -138,10 +138,10 @@ def get_boxscores(year: int, month: int, day: int):
         json_response = build_error_json('Invalid date')
         return build_response(json_response, 403)
 
-    all_boxscores = get_all_boxscores(year, month, day)
+    all_boxscores = get_all_boxscores(year, month, day).dicts()
     if all_boxscores:
-        json_response = build_valid_json([boxscore.__dict__['__data__']
-                                          for boxscore in all_boxscores])
+        json_response = build_valid_json(
+            [boxscore for boxscore in all_boxscores])
         status = 200
     else:
         json_response = build_error_json(
@@ -156,10 +156,9 @@ def get_player_boxscores(player):
     """
     Return all given player boxscores
     """
-    boxscores = Boxscore.select().where(Boxscore.player == player)
+    boxscores = Boxscore.select().where(Boxscore.player == player).dicts()
     if boxscores:
-        json_response = build_valid_json([boxscore.__dict__['__data__']
-                                          for boxscore in boxscores])
+        json_response = build_valid_json([boxscore for boxscore in boxscores])
         status = 200
     else:
         json_response = build_error_json(
