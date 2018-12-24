@@ -1,6 +1,7 @@
-from datetime import datetime
-from services.parser import parse_all_teams, parse_all_players, parse_all_games, parse_boxscores
+from datetime import datetime, timedelta
 from db_models import db, Team, Player, Game, Boxscore
+from properties.properties import APIProperty
+from services.parser import parse_all_teams, parse_all_players, parse_all_games, parse_boxscores
 from services.utils import is_date_passed
 
 
@@ -51,7 +52,7 @@ def insert_all_games(year: int, month: int, day: int):
     games = parse_all_games(year, month, day)
     should_insert = not get_all_games(year, month, day)
     [game.save(force_insert=should_insert) for game in games]
-    print('games inserted')
+    print(date_to_string(year, month, day) + ' games inserted')
 
 
 def get_all_games(year: int, month: int, day: int):
@@ -76,7 +77,7 @@ def insert_all_boxscores(year: int, month: int, day: int):
         [boxscore.save(force_insert=is_game_in_table)
          for boxscore in game_boxscores]
 
-    print('boxscores inserted')
+    print(date_to_string(year, month, day) + ' boxscores inserted')
 
 
 def get_all_boxscores(year: int, month: int, day: int):
@@ -91,27 +92,38 @@ def get_all_boxscores(year: int, month: int, day: int):
         Boxscore.game.in_(games)).order_by(Boxscore.ttfl_score.desc())
     return boxscores
 
-
-def get_ttfl_scores(year: int, month: int, day: int):
+def season_catch_up():
     """
-    Get ttfl scores at a given date, ordered by most points
+    insert all games and boxscores since beginning of the season
     """
-    ttfl_scores = Boxscore.select().join(Game).where(Game.date == datetime(
-        year, month, day)).order_by(Boxscore.ttfl_score.desc())
-    for score in ttfl_scores:
-        player = Player.get(Player.id == score.player_id)
-        #print(player.name + ' : ' + str(score.ttfl_score))
+    season_debut_year = int(APIProperty('season_debut_year'))
+    season_debut_month = int(APIProperty('season_debut_month'))
+    season_debut_day = int(APIProperty('season_debut_day'))
+    season_debut_date = datetime(season_debut_year, season_debut_month, season_debut_day)
 
+    # get number of day passed since season start
+    day_passed = int((datetime.now() - season_debut_date).days)
+    
+    for i in range(day_passed):
+        #season_debut_date + timedelta(i)
+        current_date = season_debut_date + timedelta(i)
+        insert_all_boxscores(current_date.year, current_date.month, current_date.day)
 
-def initialize_database(year: int, month: int, day: int):
+def initialize_database():
     """
     Function called at server first start, to create all tables and get data at given date
     """
     create_tables()
-    # insert_all_teams()
-    #insert_all_players()
-    insert_all_boxscores(year, month, day)
+    insert_all_teams()
+    insert_all_players()
+    season_catch_up()
 
+def date_to_string(year,month,day):
+    """
+    format date in order to be displayed for logging
+    """
+    separator = '/'
+    return str(day) + separator + str(month) + separator + str(year)
 
 def test():
     test = Boxscore.select().where(Boxscore.player == 2544).dicts()

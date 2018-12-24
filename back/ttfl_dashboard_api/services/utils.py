@@ -27,7 +27,7 @@ def build_url_boxscores(year: int, month: int, day: int, game_id: int) -> str:
     """
     base = 'https://data.nba.net/prod/v1/'
     end = '_boxscore.json'
-    date = str(year) + str(month) + str(day)
+    date = str(year) + str(month).zfill(2) + str(day).zfill(2)
     return base + date + '/' + format_game_id(str(game_id)) + end
 
 def get_json_boxscore_api(year, month, day, game_id):

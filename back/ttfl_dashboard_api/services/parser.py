@@ -119,12 +119,19 @@ def parse_common_player_info(player_id: str):
 
     if row_set:
         data = row_set[0]
+
+        # check if player has a team
+        if data[headers['TEAM_ID']]:
+            team = int(data[headers['TEAM_ID']])
+        else:
+            team = None
+
         # check if the player has already played at least one game
         has_played_games = False
         if(data[headers['GAMES_PLAYED_FLAG']] == 'Y'):
             has_played_games = True
-        print(data[headers['PERSON_ID']])
-        return Player(id=int(data[headers['PERSON_ID']]), team=int(data[headers['TEAM_ID']]),
+
+        return Player(id=int(data[headers['PERSON_ID']]), team=team,
                     name=data[headers['DISPLAY_FIRST_LAST']], has_played_games=has_played_games)
     else:
         return None
@@ -191,7 +198,6 @@ def parse_boxscores(year, month, day, game_id):
                                    format_stat(boxscore['tpm']),
                                    format_stat(boxscore['fta']),
                                    format_stat(boxscore['ftm']))
-
             all_game_perfs.append(perf)
     return all_game_perfs
 
