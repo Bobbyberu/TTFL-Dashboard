@@ -30,11 +30,7 @@ def insert_all_players():
     players = parse_all_players()
     is_table_empty = not Player.select().exists()
     for player in players:
-        # if the player doesn't play for any team
-        if(player[1] != 0):
-            #team = Team.get(Team.id == player[1])
-            player[0].team_id = player[1]
-            player[0].save(force_insert=is_table_empty)
+        player.save(force_insert=is_table_empty)
     print('players inserted')
 
 
@@ -92,6 +88,7 @@ def get_all_boxscores(year: int, month: int, day: int):
         Boxscore.game.in_(games)).order_by(Boxscore.ttfl_score.desc())
     return boxscores
 
+
 def season_catch_up():
     """
     insert all games and boxscores since beginning of the season
@@ -99,34 +96,38 @@ def season_catch_up():
     season_debut_year = int(APIProperty('season_debut_year'))
     season_debut_month = int(APIProperty('season_debut_month'))
     season_debut_day = int(APIProperty('season_debut_day'))
-    season_debut_date = datetime(season_debut_year, season_debut_month, season_debut_day)
+    season_debut_date = datetime(
+        season_debut_year, season_debut_month, season_debut_day)
 
     # get number of day passed since season start
     day_passed = int((datetime.now() - season_debut_date).days)
-    
+
     for i in range(day_passed):
         #season_debut_date + timedelta(i)
         current_date = season_debut_date + timedelta(i)
-        insert_all_boxscores(current_date.year, current_date.month, current_date.day)
+        insert_all_boxscores(
+            current_date.year, current_date.month, current_date.day)
+
 
 def initialize_database():
     """
     Function called at server first start, to create all tables and get data at given date
     """
     create_tables()
-    insert_all_teams()
-    insert_all_players()
+    # insert_all_teams()
+    # insert_all_players()
     season_catch_up()
 
-def date_to_string(year,month,day):
+
+def date_to_string(year, month, day):
     """
     format date in order to be displayed for logging
     """
     separator = '/'
     return str(day) + separator + str(month) + separator + str(year)
 
+
 def test():
     test = Boxscore.select().where(Boxscore.player == 2544).dicts()
 
     print([print(row) for row in test])
-    #[print(boxscore) for boxscore in boxscores]

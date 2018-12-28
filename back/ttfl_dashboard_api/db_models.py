@@ -1,5 +1,5 @@
 from properties.properties import DbProperty
-from peewee import Model, CharField, IntegerField, BooleanField, MySQLDatabase, ForeignKeyField, DateField, CompositeKey
+from peewee import Model, CharField, IntegerField, BooleanField, MySQLDatabase, ForeignKeyField, DateField, CompositeKey, FloatField
 
 # connection to database
 db = MySQLDatabase(DbProperty('name'), user=DbProperty('user'),
@@ -27,8 +27,14 @@ class Team(BaseModel):
 class Player(BaseModel):
     id = IntegerField(primary_key=True)
     team = ForeignKeyField(Team, backref='players', null=True)
-    name = CharField()
-    has_played_games = BooleanField(default=False)
+    first_name = CharField()
+    last_name = CharField()
+    mpg = FloatField()
+    ppg = FloatField()
+    rpg = FloatField()
+    apg = FloatField()
+    spg = FloatField()
+    bpg = FloatField()
 
 
 class Game(BaseModel):

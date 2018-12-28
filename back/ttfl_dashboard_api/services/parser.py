@@ -4,8 +4,9 @@ from datetime import datetime
 from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard, boxscoretraditionalv2
 from properties.properties import APIProperty
 from db_models import Team, Player, Game, Boxscore, create_boxscore
-from services.utils import format_game_id, get_json_boxscore_api, format_stat
+from services.utils import format_game_id, format_stat
 from dateutil.parser import parse
+from services.http_endpoints import get_all_players_json, get_player_json, get_all_games, get_json_boxscore_api
 
 ######## COMMON FUNCTIONS ########
 
@@ -80,38 +81,35 @@ def parse_team(id_team, teams):
     return teams
 #                       #
 
+
 # parsing for players #
-
-
 def parse_all_players():
-    all_players_raw = json.loads(commonallplayers.CommonAllPlayers(
-        is_only_current_season='1', league_id=APIProperty('LeagueID'), season=APIProperty('CurrentSeason')).get_json())
-    headers, row_set = get_result_set(all_players_raw)
-
-    players = []
-    for player in row_set:
-        players = parse_player(headers, player, players)
-
-    return players
-
-
-def parse_player(headers, player_array, players):
     """
-    Will return a tuple (player, team_id) to help build the foreign key
+    Parse all players information
     """
-    has_played_games = False
-    # check if the player has already played at least one game
-    if(player_array[headers['GAMES_PLAYED_FLAG']] == 'Y'):
-        has_played_games = True
-    player = (Player(id=player_array[headers['PERSON_ID']], name=player_array[headers['DISPLAY_FIRST_LAST']],
-                     has_played_games=has_played_games), player_array[headers['TEAM_ID']])
-    players.append(player)
-    return players
+    raw_players = json.loads(get_all_players_json())
+    all_players = raw_players['league']['standard']
+    all_player_parsed = []
+    for player in all_players:
+        all_player_parsed.append(parse_player(player))
+    return all_player_parsed
+
+
+def parse_player(player):
+    """
+    Parse player information and create player databas object
+    """
+    raw_player = json.loads(get_player_json(player['personId']))
+    player_stats = raw_player['league']['standard']['stats']['latest']
+    print('creating {} {}'.format(player['firstName'], player['lastName']))
+    return Player(id=player['personId'], first_name=player['firstName'], last_name=player['lastName'],
+                  team=player['teamId'], mpg=player_stats['mpg'], ppg=player_stats['ppg'],
+                  rpg=player_stats['rpg'], apg=player_stats['apg'], spg=player_stats['spg'], bpg=player_stats['bpg'])
 
 
 def parse_common_player_info(player_id: str):
     """
-    Parse player info from CommonPlayerInfo endpoint
+    Parse player info from CommonPlayerInfo endpoint (when player has not been insert in database)
     """
     player_json = json.loads(
         commonplayerinfo.CommonPlayerInfo(player_id=player_id).get_json())
@@ -126,13 +124,9 @@ def parse_common_player_info(player_id: str):
         else:
             team = None
 
-        # check if the player has already played at least one game
-        has_played_games = False
-        if(data[headers['GAMES_PLAYED_FLAG']] == 'Y'):
-            has_played_games = True
-
-        return Player(id=int(data[headers['PERSON_ID']]), team=team,
-                    name=data[headers['DISPLAY_FIRST_LAST']], has_played_games=has_played_games)
+        player = {'personId': data[headers['PERSON_ID']], 'firstName': data[headers['FIRST_NAME']],
+                  'lastName': data[headers['LAST_NAME']], 'teamId': team}
+        return parse_player(player)
     else:
         return None
 
@@ -142,18 +136,18 @@ def parse_common_player_info(player_id: str):
 
 # parsing for games #
 def parse_all_games(year, month, day):
-    separator = '-'
-    game_date = str(year) + separator + str(month) + separator + str(day)
-    raw_games = json.loads(scoreboard.Scoreboard(
-        day_offset=0, league_id=APIProperty('LeagueID'), game_date=game_date).get_json())
-    headers, row_set = get_result_set(
-        raw_json=raw_games, header_name='GameHeader')
-    games = []
-    for game in row_set:
-        parsed_game = Game(id=game[headers['GAME_ID']], home_team=game[headers['HOME_TEAM_ID']],
-                           visitor_team=game[headers['VISITOR_TEAM_ID']], date=parse(game[headers['GAME_DATE_EST']]))
-        games.append(parsed_game)
-    return games
+    raw_games = json.loads(get_all_games(year, month, day))
+    all_games = raw_games['games']
+
+    parsed_games = []
+    for game in all_games:
+        home_team = game['hTeam']
+        visitor_team = game['vTeam']
+        game_date = datetime.strptime(game['startDateEastern'], '%Y%m%d')
+        parsed_game = Game(id=game['gameId'], home_team=home_team['teamId'],
+                           visitor_team=visitor_team['teamId'], date=game_date)
+        parsed_games.append(parsed_game)
+    return parsed_games
 
 #                       #
 
@@ -183,7 +177,8 @@ def parse_boxscores(year, month, day, game_id):
 
             # if player is not in database, insert it
             if not Player.select().where(Player.id == format_stat(boxscore['personId'])):
-                parse_common_player_info(boxscore['personId']).save(force_insert=True)
+                parse_common_player_info(
+                    boxscore['personId']).save(force_insert=True)
 
             perf = create_boxscore(format_stat(boxscore['personId']), game_id, dnp, boxscore['min'],
                                    format_stat(boxscore['points']),

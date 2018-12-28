@@ -3,7 +3,6 @@ from datetime import datetime
 from flask import Blueprint, url_for, abort, jsonify, Response
 from db_models import Team, Player, Game, Boxscore
 from db_controller import get_all_boxscores
-from services.utils import get_json_boxscore_api
 
 api_controller = Blueprint('api_controller', __name__)
 api = '/api'
@@ -12,19 +11,6 @@ api = '/api'
 @api_controller.route(api)
 def apiFunction():
     abort(404)
-
-
-@api_controller.route('/test')
-def test():
-    contents = json.loads(get_json_boxscore_api(2018, 11, 15, 21800213))
-    contents = json.dumps(contents['stats']['activePlayers'])
-
-    response = Response(
-        response=contents,
-        status=200,
-        mimetype='application/json'
-    )
-    return response
 
 
 @api_controller.route(api+'/teams/')
@@ -65,7 +51,7 @@ def get_players():
     """
     Return all current nba players
     """
-    all_players = Player.select().order_by(Player.name).dicts()
+    all_players = Player.select().order_by(Player.last_name).dicts()
     if all_players:
         json_response = build_valid_json(
             [player for player in all_players])
@@ -98,7 +84,8 @@ def get_player_by_name(name: str):
     """
     Return a player or a list of players with corresponding name
     """
-    players = Player.select().where(Player.name.contains(name)).dicts()
+    players = Player.select().where((Player.first_name.contains(name))
+                                    | (Player.last_name.contains(name))).dicts()
     if players:
         json_response = build_valid_json(
             [player for player in players])
@@ -202,7 +189,7 @@ def get_top_ttfl(year, month, day):
         json_response = build_error_json('Invalid date')
         return build_response(json_response, 403)
 
-    boxscores = Boxscore.select(Boxscore.ttfl_score, Player.id, Player.name).join(Game).switch(Boxscore).join(Player).where(
+    boxscores = Boxscore.select(Boxscore.ttfl_score, Player.id, Player.first_name, Player.last_name).join(Game).switch(Boxscore).join(Player).where(
         Game.date == date).order_by(Boxscore.ttfl_score.desc()).limit(20).dicts()
     if boxscores:
         json_response = build_valid_json([boxscore for boxscore in boxscores])
