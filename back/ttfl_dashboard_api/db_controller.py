@@ -114,8 +114,8 @@ def initialize_database():
     Function called at server first start, to create all tables and get data at given date
     """
     create_tables()
-    # insert_all_teams()
-    # insert_all_players()
+    insert_all_teams()
+    insert_all_players()
     season_catch_up()
 
 

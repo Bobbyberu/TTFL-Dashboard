@@ -75,6 +75,7 @@ def parse_team(id_team, teams):
     if row_set:
         # only the first row_set contains player information
         data = row_set[0]
+        print('creating {}'.format(data[headers['TEAM_NAME']]))
         team = Team(id=int(data[headers['TEAM_ID']]), city=data[headers['TEAM_CITY']], name=data[headers['TEAM_NAME']], abbreviation=data[headers['TEAM_ABBREVIATION']],
                     conference=data[headers['TEAM_CONFERENCE']], division=data[headers['TEAM_DIVISION']], wins=int(data[headers['W']]), losses=int(data[headers['L']]))
         teams.append(team)
@@ -100,11 +101,22 @@ def parse_player(player):
     Parse player information and create player databas object
     """
     raw_player = json.loads(get_player_json(player['personId']))
-    player_stats = raw_player['league']['standard']['stats']['latest']
+    league_key = ''
+
+    # check if player has a team
+    if player['teamId']:
+        team = int(player['teamId'])
+    else:
+        team = None
+
+    # get first league in case player has been playing in several league (like standard, africa, vegas...)
+    league_key = list(raw_player['league'])[0]
+    player_stats = raw_player['league'][league_key]['stats']['latest']
     print('creating {} {}'.format(player['firstName'], player['lastName']))
-    return Player(id=player['personId'], first_name=player['firstName'], last_name=player['lastName'],
-                  team=player['teamId'], mpg=player_stats['mpg'], ppg=player_stats['ppg'],
-                  rpg=player_stats['rpg'], apg=player_stats['apg'], spg=player_stats['spg'], bpg=player_stats['bpg'])
+    player = Player(id=player['personId'], first_name=player['firstName'], last_name=player['lastName'],
+                    team=team, mpg=player_stats['mpg'], ppg=player_stats['ppg'],
+                    rpg=player_stats['rpg'], apg=player_stats['apg'], spg=player_stats['spg'], bpg=player_stats['bpg'])
+    return player
 
 
 def parse_common_player_info(player_id: str):
@@ -118,14 +130,8 @@ def parse_common_player_info(player_id: str):
     if row_set:
         data = row_set[0]
 
-        # check if player has a team
-        if data[headers['TEAM_ID']]:
-            team = int(data[headers['TEAM_ID']])
-        else:
-            team = None
-
         player = {'personId': data[headers['PERSON_ID']], 'firstName': data[headers['FIRST_NAME']],
-                  'lastName': data[headers['LAST_NAME']], 'teamId': team}
+                  'lastName': data[headers['LAST_NAME']], 'teamId': data[headers['TEAM_ID']]}
         return parse_player(player)
     else:
         return None

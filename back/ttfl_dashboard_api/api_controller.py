@@ -3,6 +3,7 @@ from datetime import datetime
 from flask import Blueprint, url_for, abort, jsonify, Response
 from db_models import Team, Player, Game, Boxscore
 from db_controller import get_all_boxscores
+from peewee import fn
 
 api_controller = Blueprint('api_controller', __name__)
 api = '/api'
@@ -114,6 +115,83 @@ def get_team_players(id: int):
     return build_response(json_response, status)
 
 
+@api_controller.route(api+'/players/ttfl/<int:id>/')
+def get_all_ttfl_perfs_player(id: int):
+    """
+    Return all ttfl score for given player
+    """
+    perfs = Boxscore.select(Boxscore.ttfl_score, Game.date).join(
+        Game).where(Boxscore.player == id).order_by(Game.date.desc()).dicts()
+    if perfs:
+        json_response = build_valid_json(
+            [perf for perf in perfs])
+        status = 200
+    else:
+        json_response = build_error_json('Player not found')
+        status = 404
+
+    return build_response(json_response, status)
+
+
+@api_controller.route(api+'/players/ttfl/<int:id>/<start_date>/<end_date>')
+def get_perfs_ttfl_between_dates(id, start_date, end_date):
+    """
+    Return all player ttfl score between given dates
+    """
+    start_date = datetime.strptime(start_date, '%Y%m%d')
+    end_date = datetime.strptime(end_date, '%Y%m%d')
+
+    perfs = Boxscore.select(Boxscore.ttfl_score, Game.date).join(Game).where((Boxscore.player == id) & (
+        Game.date.between(start_date, end_date))).order_by(Game.date.desc()).dicts()
+    if perfs:
+        json_response = build_valid_json(
+            [perf for perf in perfs])
+        status = 200
+    else:
+        json_response = build_error_json('Player not found')
+        status = 404
+
+    return build_response(json_response, status)
+
+
+@api_controller.route(api+'/players/ttfl/avg/<int:id>/<start_date>/<end_date>')
+def get_avg_ttfl_player_between_dates(id, start_date, end_date):
+    """
+    Return average player ttfl score between given dates
+    """
+    ttfl_avg = Boxscore.select(Boxscore.player, fn.AVG(Boxscore.ttfl_score).alias(
+        'ttfl_avg')).join(Game).where((Boxscore.player == id) & (Game.date.between(start_date, end_date))).dicts()
+
+    if ttfl_avg:
+        # selecting first element
+        json_response = build_valid_json(ttfl_avg[0])
+        status = 200
+    else:
+        json_response = build_error_json(
+            'Could not get average')
+        status = 403
+    return build_response(json_response, status)
+
+
+@api_controller.route(api+'/players/avg/<int:id>')
+def get_player_avg_stats(id: int):
+    """
+    Return player average stats (minutes, points, rebounds, assists, steal, blocks, ttfl_score)
+    """
+    player = Boxscore.select(Player.last_name, Player.first_name, Player.mpg, Player.ppg, Player.rpg, Player.apg, Player.spg,
+                             Player.bpg, fn.AVG(Boxscore.ttfl_score).alias('ttflpg')).where(Boxscore.player == id).join(Player).dicts()
+
+    if player:
+        # selecting first element
+        json_response = build_valid_json(player[0])
+        status = 200
+    else:
+        json_response = build_error_json(
+            'Could not get average')
+        status = 403
+    return build_response(json_response, status)
+
+
 @api_controller.route(api+'/boxscores/<int:year>/<int:month>/<int:day>')
 def get_boxscores(year: int, month: int, day: int):
     """
@@ -218,7 +296,9 @@ def build_valid_json(data):
     """
     response = {"status": "OK"}
     response["data"] = data
-    return json.dumps(response)
+
+    # default = str to help format date
+    return json.dumps(response, default=str)
 
 
 def build_error_json(error_message):
