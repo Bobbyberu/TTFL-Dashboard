@@ -7,6 +7,10 @@ from db_models import Team, Player, Game, Boxscore, create_boxscore
 from services.utils import format_game_id, format_stat
 from dateutil.parser import parse
 from services.http_endpoints import get_all_players_json, get_player_json, get_all_games, get_json_boxscore_api
+from services.logger import getLogger
+
+logger = getLogger(__name__)
+
 
 ######## COMMON FUNCTIONS ########
 
@@ -75,7 +79,7 @@ def parse_team(id_team, teams):
     if row_set:
         # only the first row_set contains player information
         data = row_set[0]
-        print('creating {}'.format(data[headers['TEAM_NAME']]))
+        logger.info('creating {}'.format(data[headers['TEAM_NAME']]))
         team = Team(id=int(data[headers['TEAM_ID']]), city=data[headers['TEAM_CITY']], name=data[headers['TEAM_NAME']], abbreviation=data[headers['TEAM_ABBREVIATION']],
                     conference=data[headers['TEAM_CONFERENCE']], division=data[headers['TEAM_DIVISION']], wins=int(data[headers['W']]), losses=int(data[headers['L']]))
         teams.append(team)
@@ -112,7 +116,8 @@ def parse_player(player):
     # get first league in case player has been playing in several league (like standard, africa, vegas...)
     league_key = list(raw_player['league'])[0]
     player_stats = raw_player['league'][league_key]['stats']['latest']
-    print('creating {} {}'.format(player['firstName'], player['lastName']))
+    logger.info('creating {} {}'.format(
+        player['firstName'], player['lastName']))
     player = Player(id=player['personId'], first_name=player['firstName'], last_name=player['lastName'],
                     team=team, mpg=player_stats['mpg'], ppg=player_stats['ppg'],
                     rpg=player_stats['rpg'], apg=player_stats['apg'], spg=player_stats['spg'], bpg=player_stats['bpg'])

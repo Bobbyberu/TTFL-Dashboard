@@ -5,7 +5,6 @@ from peewee import Model, CharField, IntegerField, BooleanField, MySQLDatabase, 
 db = MySQLDatabase(DbProperty('name'), user=DbProperty('user'),
                    password=DbProperty('pwd'), host=DbProperty('host'), port=DbProperty('port', True))
 db.connect()
-print("db connected")
 
 
 class BaseModel(Model):

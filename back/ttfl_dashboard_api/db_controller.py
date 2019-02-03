@@ -1,37 +1,43 @@
 from datetime import datetime, timedelta
 from db_models import db, Team, Player, Game, Boxscore
 from properties.properties import APIProperty
+from services.logger import getLogger
 from services.parser import parse_all_teams, parse_all_players, parse_all_games, parse_boxscores
 from services.utils import is_date_passed
+
+logger = getLogger(__name__)
 
 
 def create_tables():
     """
     Create all tables in database
     """
+    logger.info('Creating tables...')
     db.create_tables([Team, Player, Game, Boxscore])
-    print('tables created')
+    logger.info('Tables created')
 
 
 def insert_all_teams():
     """
     Insert all current nba teams in database
     """
+    logger.info('Inserting teams...')
     teams = parse_all_teams()
     is_table_empty = not Team.select().exists()
     [team.save(force_insert=is_table_empty) for team in teams]
-    print('teams inserted')
+    logger.info('Teams inserted')
 
 
 def insert_all_players():
     """
     Insert all players currently playing in the league in database
     """
+    logger.info('Inserting players...')
     players = parse_all_players()
     is_table_empty = not Player.select().exists()
     for player in players:
         player.save(force_insert=is_table_empty)
-    print('players inserted')
+    logger.info('Players inserted')
 
 
 def are_games_inserted(year: int, month: int, day: int):
@@ -45,10 +51,11 @@ def insert_all_games(year: int, month: int, day: int):
     """
     Insert all games in database at given date
     """
+    logger.info('Inserting %s games...', date_to_string(year, month, day))
     games = parse_all_games(year, month, day)
     should_insert = not get_all_games(year, month, day)
     [game.save(force_insert=should_insert) for game in games]
-    print(date_to_string(year, month, day) + ' games inserted')
+    logger.info(date_to_string(year, month, day) + ' games inserted')
 
 
 def get_all_games(year: int, month: int, day: int):
@@ -63,6 +70,7 @@ def insert_all_boxscores(year: int, month: int, day: int):
     """
     Insert all players stats in database at given date
     """
+    logger.info('Inserting %s boxscores...', date_to_string(year, month, day))
     # check if games have already been inserted and if game date is passed
     if is_date_passed(year, month, day) and not get_all_games(year, month, day):
         insert_all_games(year, month, day)
@@ -73,7 +81,7 @@ def insert_all_boxscores(year: int, month: int, day: int):
         [boxscore.save(force_insert=is_game_in_table)
          for boxscore in game_boxscores]
 
-    print(date_to_string(year, month, day) + ' boxscores inserted')
+    logger.info('%s boxscores inserted', date_to_string(year, month, day))
 
 
 def get_all_boxscores(year: int, month: int, day: int):
