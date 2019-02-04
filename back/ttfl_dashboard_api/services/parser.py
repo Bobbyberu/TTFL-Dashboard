@@ -191,19 +191,19 @@ def parse_boxscores(year, month, day, game_id):
                 parse_common_player_info(
                     boxscore['personId']).save(force_insert=True)
 
-            perf = create_boxscore(format_stat(boxscore['personId']), game_id, dnp, boxscore['min'],
-                                   format_stat(boxscore['points']),
-                                   format_stat(boxscore['totReb']),
-                                   format_stat(boxscore['assists']),
-                                   format_stat(boxscore['steals']),
-                                   format_stat(boxscore['blocks']),
-                                   format_stat(boxscore['turnovers']),
-                                   format_stat(boxscore['fga']),
-                                   format_stat(boxscore['fgm']),
-                                   format_stat(boxscore['tpa']),
-                                   format_stat(boxscore['tpm']),
-                                   format_stat(boxscore['fta']),
-                                   format_stat(boxscore['ftm']))
+            perf = Boxscore(player_id=format_stat(boxscore['personId']), game_id=game_id, dnp=dnp, min=boxscore['min'],
+                            pts=format_stat(boxscore['points']),
+                            reb=format_stat(boxscore['totReb']),
+                            ast=format_stat(boxscore['assists']),
+                            stl=format_stat(boxscore['steals']),
+                            blk=format_stat(boxscore['blocks']),
+                            to=format_stat(boxscore['turnovers']),
+                            fga=format_stat(boxscore['fga']),
+                            fgm=format_stat(boxscore['fgm']),
+                            tpa=format_stat(boxscore['tpa']),
+                            tpm=format_stat(boxscore['tpm']),
+                            fta=format_stat(boxscore['fta']),
+                            ftm=format_stat(boxscore['ftm']))
             all_game_perfs.append(perf)
     return all_game_perfs
 

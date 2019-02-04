@@ -67,29 +67,23 @@ class Boxscore(BaseModel):
         primary_key = CompositeKey('player', 'game')
         database = db
 
-
-def create_boxscore(player_id, game_id, dnp, min, pts, reb, ast, stl, blk, to, fga, fgm, tpa, tpm, fta, ftm):
-    # calculate ttfl score from player's stats
-    ttfl_score = pts + reb + ast + stl + blk - to + \
-        (fgm-(fga-fgm)) + (tpm-(tpa-tpm)) + (ftm-(fta-ftm))
-    boxscore = Boxscore(player_id=player_id,
-                        game_id=game_id,
-                        dnp=dnp,
-                        pts=pts,
-                        reb=reb,
-                        ast=ast,
-                        stl=stl,
-                        blk=blk,
-                        to=to,
-                        fga=fga,
-                        fgm=fgm,
-                        tpa=tpa,
-                        tpm=tpm,
-                        fta=fta,
-                        ftm=ftm,
-                        ttfl_score=ttfl_score)
-    # set field only if it exists
-    if min:
-        boxscore.min = min
-
-    return boxscore
+    def __init__(self, player_id, game_id, dnp, min, pts, reb, ast, stl, blk, to, fga, fgm, tpa, tpm, fta, ftm):
+        super(Boxscore, self).__init__()
+        self.player = player_id
+        self.game = game_id
+        self.min = min
+        self.dnp = dnp
+        self.pts = pts
+        self.reb = reb
+        self.ast = ast
+        self.stl = stl
+        self.blk = blk
+        self.to = to
+        self.fga = fga
+        self.fgm = fgm
+        self.tpa = tpa
+        self.tpm = tpm
+        self.fta = fta
+        self.ftm = ftm
+        self.ttfl_score = pts + reb + ast + stl + blk - to + \
+            (fgm-(fga-fgm)) + (tpm-(tpa-tpm)) + (ftm-(fta-ftm))

@@ -32,6 +32,6 @@ if __name__ == "__main__":
     init_scheduler()
     # initialize_database()
     # insert_all_players()
-    # insert_all_boxscores(2018,12,25)
+    # insert_all_boxscores(2018, 1, 25)
     # parse_all_players()
     app.run(use_reloader=False)
