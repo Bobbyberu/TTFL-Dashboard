@@ -1,5 +1,4 @@
 from flask import Flask, abort
-from flask_script import Manager, Server
 from ttfl_dashboard_api.api_controller import api_controller
 from ttfl_dashboard_api.db_controller import initialize_database, test, insert_all_boxscores, season_catch_up, insert_all_players
 from peewee import *
@@ -7,8 +6,6 @@ import time
 from urllib import request
 from services.scheduler import init_scheduler
 from services.logger import getLogger
-
-start_time = time.time()
 
 if __name__ == 'ttfl_dashboard_api':
     print("""  
@@ -37,6 +34,4 @@ if __name__ == "__main__":
     # insert_all_players()
     # insert_all_boxscores(2018,12,25)
     # parse_all_players()
-    logger.info("TTFLDashboard started in %s seconds" %
-                (time.time() - start_time))
     app.run(use_reloader=False)

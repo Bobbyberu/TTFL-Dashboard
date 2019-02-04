@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
-from flask import Blueprint, url_for, abort, jsonify, Response
-from db_models import Team, Player, Game, Boxscore
+from flask import abort, Blueprint, jsonify, Response, url_for
+from db_models import Boxscore, Game, Player, Team
 from db_controller import get_all_boxscores
 from peewee import fn
 
@@ -23,12 +23,10 @@ def get_teams():
     if all_teams:
         json_response = build_valid_json(
             [team for team in all_teams])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json('No team were found')
-        status = 404
-
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/teams/id/<int:id>')
@@ -39,12 +37,10 @@ def get_team_by_id(id: int):
     team = Team.select().where(Team.id == id)
     if team:
         json_response = build_valid_json(team.get().__dict__['__data__'])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json('No team were found')
-        status = 404
-
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/players/')
@@ -56,12 +52,10 @@ def get_players():
     if all_players:
         json_response = build_valid_json(
             [player for player in all_players])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json('No player were found')
-        status = 404
-
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/players/id/<int:id>')
@@ -72,12 +66,10 @@ def get_player_by_id(id: int):
     player = Player.select().where(Player.id == id)
     if player:
         json_response = build_valid_json(player.get().__dict__['__data__'])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json('No player found')
-        status = 404
-
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/players/name/<name>')
@@ -90,12 +82,10 @@ def get_player_by_name(name: str):
     if players:
         json_response = build_valid_json(
             [player for player in players])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json('No player found')
-        status = 404
-
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/players/team/<int:id>')
@@ -107,12 +97,10 @@ def get_team_players(id: int):
     if players:
         json_response = build_valid_json(
             [player for player in players])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json('No team found')
-        status = 404
-
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/players/ttfl/<int:id>/')
@@ -125,12 +113,10 @@ def get_all_ttfl_perfs_player(id: int):
     if perfs:
         json_response = build_valid_json(
             [perf for perf in perfs])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json('Player not found')
-        status = 404
-
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/players/ttfl/<int:id>/<start_date>/<end_date>')
@@ -146,12 +132,10 @@ def get_perfs_ttfl_between_dates(id, start_date, end_date):
     if perfs:
         json_response = build_valid_json(
             [perf for perf in perfs])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json('Player not found')
-        status = 404
-
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/players/ttfl/avg/<int:id>/<start_date>/<end_date>')
@@ -165,12 +149,11 @@ def get_avg_ttfl_player_between_dates(id, start_date, end_date):
     if ttfl_avg:
         # selecting first element
         json_response = build_valid_json(ttfl_avg[0])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json(
             'Could not get average')
-        status = 403
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/players/avg/<int:id>')
@@ -184,12 +167,11 @@ def get_player_avg_stats(id: int):
     if player:
         # selecting first element
         json_response = build_valid_json(player[0])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json(
             'Could not get average')
-        status = 403
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/boxscores/<int:year>/<int:month>/<int:day>')
@@ -201,19 +183,17 @@ def get_boxscores(year: int, month: int, day: int):
         datetime(year, month, day)
     except ValueError:
         json_response = build_error_json('Invalid date')
-        return build_response(json_response, 403)
+        abort(build_response(json_response, 404))
 
     all_boxscores = get_all_boxscores(year, month, day).dicts()
     if all_boxscores:
         json_response = build_valid_json(
             [boxscore for boxscore in all_boxscores])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json(
             'Impossible to get boxscores with a date in the future')
-        status = 403
-
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/boxscores/player/<int:player>')
@@ -224,13 +204,11 @@ def get_player_boxscores(player):
     boxscores = Boxscore.select().where(Boxscore.player == player).dicts()
     if boxscores:
         json_response = build_valid_json([boxscore for boxscore in boxscores])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json(
             'Could not get boxscores')
-        status = 403
-
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/boxscores/player/<int:player>/<int:year>/<int:month>/<int:day>')
@@ -242,18 +220,17 @@ def get_player_night_boxscore(player, year, month, day):
         date = datetime(year, month, day)
     except ValueError:
         json_response = build_error_json('Invalid date')
-        return build_response(json_response, 403)
+        abort(build_response(json_response, 404))
 
     boxscore = Boxscore.select().join(Game).where(
         (Boxscore.player == player) & (Game.date == date)).get()
     if boxscore:
         json_response = build_valid_json(boxscore.__dict__['__data__'])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json(
             'Could not get boxscores')
-        status = 403
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 @api_controller.route(api+'/boxscores/topttfl/<int:year>/<int:month>/<int:day>')
@@ -265,18 +242,17 @@ def get_top_ttfl(year, month, day):
         date = datetime(year, month, day)
     except ValueError:
         json_response = build_error_json('Invalid date')
-        return build_response(json_response, 403)
+        abort(build_response(json_response, 404))
 
     boxscores = Boxscore.select(Boxscore.ttfl_score, Player.id, Player.first_name, Player.last_name).join(Game).switch(Boxscore).join(Player).where(
         Game.date == date).order_by(Boxscore.ttfl_score.desc()).limit(20).dicts()
     if boxscores:
         json_response = build_valid_json([boxscore for boxscore in boxscores])
-        status = 200
+        return build_response(json_response, 200)
     else:
         json_response = build_error_json(
             'Could not get boxscores')
-        status = 403
-    return build_response(json_response, status)
+        abort(build_response(json_response, 404))
 
 
 def build_response(json_response, status):

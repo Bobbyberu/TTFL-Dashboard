@@ -17,9 +17,9 @@ def init_scheduler():
     scheduler = BackgroundScheduler()
     # insert live boxscores every 5 minutes during night from 6pm from 7am
     scheduler.add_job(insert_live_boxscores, 'cron', year='*', month='*',
-                      day='*', week='*', hour='18-23', minute='*', second='*/5', id='live_boxscores_evening')
+                      day='*', week='*', hour='18-23', minute='*/1', second='0', id='live_boxscores_evening')
     scheduler.add_job(insert_live_boxscores, 'cron', year='*', month='*',
-                      day='*', week='*', hour='0-6', minute='*', second='*/5', id='live_boxscores_morning')
+                      day='*', week='*', hour='0-6', minute='*/1', second='0', id='live_boxscores_morning')
 
     # update all teams every day at 8am
     scheduler.add_job(insert_all_teams, 'cron', year='*', month='*',
