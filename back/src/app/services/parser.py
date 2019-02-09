@@ -1,7 +1,7 @@
 import json
 import time
 from datetime import datetime
-from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard, boxscoretraditionalv2
+from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard, boxscoretraditionalv2, playercareerstats
 from app.properties.properties import APIProperty
 from app.db_models import Team, Player, Game, Boxscore
 from app.services.utils import format_game_id, format_stat
@@ -104,24 +104,19 @@ def parse_player(player):
     """
     Parse player information and create player databas object
     """
-    raw_player = json.loads(get_player_json(player['personId']))
-    league_key = ''
+    player_json = get_player_json(player['personId'])
+    if player_json is not None:
+        raw_player = json.loads(player_json)
 
-    # check if player has a team
-    if player['teamId']:
-        team = int(player['teamId'])
-    else:
-        team = None
-
-    # get first league in case player has been playing in several league (like standard, africa, vegas...)
-    league_key = list(raw_player['league'])[0]
-    player_stats = raw_player['league'][league_key]['stats']['latest']
-    logger.info('creating {} {}'.format(
-        player['firstName'], player['lastName']))
-    player = Player(id=player['personId'], first_name=player['firstName'], last_name=player['lastName'],
-                    team=team, mpg=player_stats['mpg'], ppg=player_stats['ppg'],
-                    rpg=player_stats['rpg'], apg=player_stats['apg'], spg=player_stats['spg'], bpg=player_stats['bpg'])
-    return player
+        # get first league in case player has been playing in several league (like standard, africa, vegas...)
+        league_key = list(raw_player['league'])[0]
+        player_stats = raw_player['league'][league_key]['stats']['latest']
+        logger.info('creating {} {}'.format(
+            player['firstName'], player['lastName']))
+        player = Player(id=player['personId'], first_name=player['firstName'], last_name=player['lastName'],
+                        team=player['teamId'], mpg=player_stats['mpg'], ppg=player_stats['ppg'],
+                        rpg=player_stats['rpg'], apg=player_stats['apg'], spg=player_stats['spg'], bpg=player_stats['bpg'])
+        return player
 
 
 def parse_common_player_info(player_id: str):
@@ -130,14 +125,38 @@ def parse_common_player_info(player_id: str):
     """
     player_json = json.loads(
         commonplayerinfo.CommonPlayerInfo(player_id=player_id).get_json())
-    headers, row_set = get_result_set(player_json, 'CommonPlayerInfo')
+    headers_player, row_set_player = get_result_set(
+        player_json, 'CommonPlayerInfo')
 
-    if row_set:
-        data = row_set[0]
+    if row_set_player:
+        data_player = row_set_player[0]
 
-        player = {'personId': data[headers['PERSON_ID']], 'firstName': data[headers['FIRST_NAME']],
-                  'lastName': data[headers['LAST_NAME']], 'teamId': data[headers['TEAM_ID']]}
-        return parse_player(player)
+        # check if player has a team
+        if data_player[headers_player['TEAM_ID']]:
+            team = int(data_player[headers_player['TEAM_ID']])
+        else:
+            team = None
+
+        player = {'personId': data_player[headers_player['PERSON_ID']], 'firstName': data_player[headers_player['FIRST_NAME']],
+                  'lastName': data_player[headers_player['LAST_NAME']], 'teamId': team}
+
+        parsed_player = parse_player(player)
+        if parsed_player is not None:
+            return parsed_player
+        else:
+            # in case player is not registered by data.nba.net api
+            stats_json = json.loads(playercareerstats.PlayerCareerStats(
+                player_id=player_id, per_mode36='PerGame', league_id_nullable=APIProperty('LeagueID')).get_json())
+            headers_stats, row_set_stats = get_result_set(
+                stats_json, 'SeasonTotalsRegularSeason')
+
+            # get stats for current season
+            data_stats = row_set_stats[-1]
+            return Player(id=data_player[headers_player['PERSON_ID']], first_name=data_player[headers_player['FIRST_NAME']],
+                            last_name=data_player[headers_player['LAST_NAME']], team=team,
+                            mpg=data_stats[headers_stats['MIN']], ppg=data_stats[headers_stats['MIN']],
+                            rpg=data_stats[headers_stats['REB']], apg=data_stats[headers_stats['AST']],
+                            spg=data_stats[headers_stats['STL']], bpg=data_stats[headers_stats['BLK']])
     else:
         return None
 
@@ -188,8 +207,10 @@ def parse_boxscores(year, month, day, game_id):
 
             # if player is not in database, insert it
             if not Player.select().where(Player.id == format_stat(boxscore['personId'])):
-                parse_common_player_info(
-                    boxscore['personId']).save(force_insert=True)
+                player = parse_common_player_info(
+                    boxscore['personId'])
+                if player is not None:
+                    player.save(force_insert=True)
 
             perf = Boxscore(player_id=format_stat(boxscore['personId']), game_id=game_id, dnp=dnp, min=boxscore['min'],
                             pts=format_stat(boxscore['points']),

@@ -32,7 +32,7 @@ def create_app():
 
     # initialize_database()
     # insert_all_players()
-    insert_all_boxscores(2018, 1, 28)
+    insert_all_boxscores(2018, 2, 8)
     # parse_all_players()
     # app.run(use_reloader=False)
     return app

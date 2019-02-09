@@ -1,5 +1,5 @@
 from app.services.utils import format_game_id
-from urllib import request
+from urllib import request, error
 
 
 def get_json_boxscore_api(year: int, month: int, day: int, game_id: int) -> str:
@@ -26,7 +26,11 @@ def get_player_json(player_id):
     """
     url = 'http://data.nba.net/prod/v1/2018/players/{}_profile.json'.format(
         player_id)
-    return request.urlopen(url).read()
+    try:
+        player_json = request.urlopen(url).read()
+        return player_json
+    except error.URLError:
+        return None
 
 
 def get_all_games(year, month, day):
