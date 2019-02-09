@@ -2,12 +2,12 @@ import json
 import time
 from datetime import datetime
 from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard, boxscoretraditionalv2
-from properties.properties import APIProperty
-from db_models import Team, Player, Game, Boxscore, create_boxscore
-from services.utils import format_game_id, format_stat
+from app.properties.properties import APIProperty
+from app.db_models import Team, Player, Game, Boxscore
+from app.services.utils import format_game_id, format_stat
 from dateutil.parser import parse
-from services.http_endpoints import get_all_players_json, get_player_json, get_all_games, get_json_boxscore_api
-from services.logger import getLogger
+from app.services.http_endpoints import get_all_players_json, get_player_json, get_all_games, get_json_boxscore_api
+from app.services.logger import getLogger
 
 logger = getLogger(__name__)
 

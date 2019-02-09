@@ -1,4 +1,4 @@
-from services.utils import format_game_id
+from app.services.utils import format_game_id
 from urllib import request
 
 

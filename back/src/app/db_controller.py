@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
-from db_models import db, Team, Player, Game, Boxscore
-from properties.properties import APIProperty
-from services.logger import getLogger
-from services.parser import parse_all_teams, parse_all_players, parse_all_games, parse_boxscores
-from services.utils import is_date_passed
+from app.db_models import db, Team, Player, Game, Boxscore
+from app.properties.properties import APIProperty
+from app.services.logger import getLogger
+from app.services.parser import parse_all_teams, parse_all_players, parse_all_games, parse_boxscores
+from app.services.utils import is_date_passed
 
 logger = getLogger(__name__)
 

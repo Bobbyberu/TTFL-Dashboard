@@ -1,7 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
-from db_controller import insert_all_boxscores, insert_all_teams, insert_all_players
+from app.db_controller import insert_all_boxscores, insert_all_teams, insert_all_players
 from datetime import datetime
-from services.logger import getLogger
+from app.services.logger import getLogger
 
 logger = getLogger(__name__)
 

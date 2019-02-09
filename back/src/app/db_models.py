@@ -1,5 +1,5 @@
-from properties.properties import DbProperty
 from peewee import Model, CharField, IntegerField, BooleanField, MySQLDatabase, ForeignKeyField, DateField, CompositeKey, FloatField
+from app.properties.properties import DbProperty
 
 # connection to database
 db = MySQLDatabase(DbProperty('name'), user=DbProperty('user'),

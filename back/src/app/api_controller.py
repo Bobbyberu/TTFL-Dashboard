@@ -1,9 +1,9 @@
 import json
 from datetime import datetime
 from flask import abort, Blueprint, jsonify, Response, url_for
-from db_models import Boxscore, Game, Player, Team
-from db_controller import get_all_boxscores
 from peewee import fn
+from app.db_models import Boxscore, Game, Player, Team
+from app.db_controller import get_all_boxscores
 
 api_controller = Blueprint('api_controller', __name__)
 api = '/api'

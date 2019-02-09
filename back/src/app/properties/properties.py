@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 
 config = ConfigParser()
-config.read('properties/properties.ini')
+config.read('app/properties/properties.ini')
 APISection = 'API'
 DbSection = 'Database'
 
