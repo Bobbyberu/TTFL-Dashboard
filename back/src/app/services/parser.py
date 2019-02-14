@@ -3,8 +3,8 @@ import time
 from datetime import datetime
 from nba_api.stats.endpoints import commonallplayers, commonteamyears, teaminfocommon, commonplayerinfo, scoreboard, boxscoretraditionalv2, playercareerstats
 from app.properties.properties import APIProperty
-from app.db_models import Team, Player, Game, Boxscore
-from app.services.utils import format_game_id, format_stat
+from app.db_models import Team, Player, Game, Boxscore, db
+from app.services.utils import format_game_id, format_stat, format_avg_stat
 from dateutil.parser import parse
 from app.services.http_endpoints import get_all_players_json, get_player_json, get_all_games, get_json_boxscore_api
 from app.services.logger import getLogger
@@ -50,6 +50,13 @@ def get_ids(headers, id_field, data):
         indexes.append(data[i][index_id])
     return indexes
 
+
+def format_team(team):
+    if team:
+        return int(team)
+    else:
+        return None
+
 ################
 
 # parsing for teams #
@@ -80,7 +87,7 @@ def parse_team(id_team, teams):
         # only the first row_set contains player information
         data = row_set[0]
         logger.info('creating {}'.format(data[headers['TEAM_NAME']]))
-        team = Team(id=int(data[headers['TEAM_ID']]), city=data[headers['TEAM_CITY']], name=data[headers['TEAM_NAME']], abbreviation=data[headers['TEAM_ABBREVIATION']],
+        team = Team(_id=int(data[headers['TEAM_ID']]), city=data[headers['TEAM_CITY']], name=data[headers['TEAM_NAME']], abbreviation=data[headers['TEAM_ABBREVIATION']],
                     conference=data[headers['TEAM_CONFERENCE']], division=data[headers['TEAM_DIVISION']], wins=int(data[headers['W']]), losses=int(data[headers['L']]))
         teams.append(team)
     return teams
@@ -113,9 +120,12 @@ def parse_player(player):
         player_stats = raw_player['league'][league_key]['stats']['latest']
         logger.info('creating {} {}'.format(
             player['firstName'], player['lastName']))
-        player = Player(id=player['personId'], first_name=player['firstName'], last_name=player['lastName'],
-                        team=player['teamId'], mpg=player_stats['mpg'], ppg=player_stats['ppg'],
-                        rpg=player_stats['rpg'], apg=player_stats['apg'], spg=player_stats['spg'], bpg=player_stats['bpg'])
+        player = Player(id=int(player['personId']), first_name=player['firstName'],
+                        last_name=player['lastName'], team_id=format_team(
+                            player['teamId']),
+                        mpg=format_avg_stat(player_stats['mpg']), ppg=format_avg_stat(player_stats['ppg']),
+                        rpg=format_avg_stat(player_stats['rpg']), apg=format_avg_stat(player_stats['apg']),
+                        spg=format_avg_stat(player_stats['spg']), bpg=format_avg_stat(player_stats['bpg']))
         return player
 
 
@@ -131,14 +141,8 @@ def parse_common_player_info(player_id: str):
     if row_set_player:
         data_player = row_set_player[0]
 
-        # check if player has a team
-        if data_player[headers_player['TEAM_ID']]:
-            team = int(data_player[headers_player['TEAM_ID']])
-        else:
-            team = None
-
         player = {'personId': data_player[headers_player['PERSON_ID']], 'firstName': data_player[headers_player['FIRST_NAME']],
-                  'lastName': data_player[headers_player['LAST_NAME']], 'teamId': team}
+                  'lastName': data_player[headers_player['LAST_NAME']], 'teamId': format_team(data_player[headers_player['TEAM_ID']])}
 
         parsed_player = parse_player(player)
         if parsed_player is not None:
@@ -153,10 +157,15 @@ def parse_common_player_info(player_id: str):
             # get stats for current season
             data_stats = row_set_stats[-1]
             return Player(id=data_player[headers_player['PERSON_ID']], first_name=data_player[headers_player['FIRST_NAME']],
-                            last_name=data_player[headers_player['LAST_NAME']], team=team,
-                            mpg=data_stats[headers_stats['MIN']], ppg=data_stats[headers_stats['MIN']],
-                            rpg=data_stats[headers_stats['REB']], apg=data_stats[headers_stats['AST']],
-                            spg=data_stats[headers_stats['STL']], bpg=data_stats[headers_stats['BLK']])
+                          last_name=data_player[headers_player['LAST_NAME']],
+                          team_id=format_team(
+                              data_player[headers_player['TEAM_ID']]),
+                          mpg=data_stats[headers_stats['MIN']],
+                          ppg=data_stats[headers_stats['MIN']],
+                          rpg=data_stats[headers_stats['REB']],
+                          apg=data_stats[headers_stats['AST']],
+                          spg=data_stats[headers_stats['STL']],
+                          bpg=data_stats[headers_stats['BLK']])
     else:
         return None
 
@@ -174,8 +183,8 @@ def parse_all_games(year, month, day):
         home_team = game['hTeam']
         visitor_team = game['vTeam']
         game_date = datetime.strptime(game['startDateEastern'], '%Y%m%d')
-        parsed_game = Game(id=game['gameId'], home_team=home_team['teamId'],
-                           visitor_team=visitor_team['teamId'], date=game_date)
+        parsed_game = Game(id=game['gameId'], home_team_id=home_team['teamId'],
+                           visitor_team_id=visitor_team['teamId'], date=game_date, is_game_live=False)
         parsed_games.append(parsed_game)
     return parsed_games
 
@@ -183,17 +192,15 @@ def parse_all_games(year, month, day):
 
 
 # parsing for boxscore #
-def parse_boxscores(year, month, day, game_id):
+def parse_boxscores(year, month, day, game):
     """
     Get and parse all players stats at one given game
     """
     all_game_perfs = []
-    game_stats = json.loads(get_json_boxscore_api(year, month, day, game_id))
+    game_stats = json.loads(get_json_boxscore_api(year, month, day, game._id))
 
     # Change game live status if it's ongoing
-    query_game_live = Game.update(is_game_live=is_game_live(
-        game_stats)).where(Game.id == game_id)
-    query_game_live.execute()
+    game.is_game_live = is_game_live(game_stats)
     game_start_UTC = parse(
         game_stats['basicGameData']['startTimeUTC']).replace(tzinfo=None)
     # do not parse the boxscore if game has not started yet
@@ -206,13 +213,14 @@ def parse_boxscores(year, month, day, game_id):
                 dnp = True
 
             # if player is not in database, insert it
-            if not Player.select().where(Player.id == format_stat(boxscore['personId'])):
+            if Player.query.filter_by(_id=format_stat(boxscore['personId'])).first() is None:
                 player = parse_common_player_info(
                     boxscore['personId'])
                 if player is not None:
-                    player.save(force_insert=True)
+                    db.session.add(player)
+                    db.session.commit()
 
-            perf = Boxscore(player_id=format_stat(boxscore['personId']), game_id=game_id, dnp=dnp, min=boxscore['min'],
+            perf = Boxscore(player_id=format_stat(boxscore['personId']), game_id=game._id, dnp=dnp, min=boxscore['min'],
                             pts=format_stat(boxscore['points']),
                             reb=format_stat(boxscore['totReb']),
                             ast=format_stat(boxscore['assists']),

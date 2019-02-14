@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from app.db_models import db, Team, Player, Game, Boxscore
+from app.db_models import db, Boxscore, Game, Player, Team
 from app.properties.properties import APIProperty
 from app.services.logger import getLogger
 from app.services.parser import parse_all_teams, parse_all_players, parse_all_games, parse_boxscores
@@ -8,23 +8,14 @@ from app.services.utils import is_date_passed
 logger = getLogger(__name__)
 
 
-def create_tables():
-    """
-    Create all tables in database
-    """
-    logger.info('Creating tables...')
-    db.create_tables([Team, Player, Game, Boxscore])
-    logger.info('Tables created')
-
-
 def insert_all_teams():
     """
     Insert all current nba teams in database
     """
     logger.info('Inserting teams...')
     teams = parse_all_teams()
-    is_table_empty = not Team.select().exists()
-    [team.save(force_insert=is_table_empty) for team in teams]
+    [db.session.merge(team) for team in teams]
+    db.session.commit()
     logger.info('Teams inserted')
 
 
@@ -34,9 +25,8 @@ def insert_all_players():
     """
     logger.info('Inserting players...')
     players = parse_all_players()
-    is_table_empty = not Player.select().exists()
-    for player in players:
-        player.save(force_insert=is_table_empty)
+    [db.session.merge(player) for player in players]
+    db.session.commit()
     logger.info('Players inserted')
 
 
@@ -53,8 +43,8 @@ def insert_all_games(year: int, month: int, day: int):
     """
     logger.info('Inserting %s games...', date_to_string(year, month, day))
     games = parse_all_games(year, month, day)
-    should_insert = not get_all_games(year, month, day)
-    [game.save(force_insert=should_insert) for game in games]
+    [db.session.add(game) for game in games]
+    db.session.commit()
     logger.info(date_to_string(year, month, day) + ' games inserted')
 
 
@@ -62,8 +52,7 @@ def get_all_games(year: int, month: int, day: int):
     """
     Select all games from database at given date
     """
-    games = Game.select().where(Game.date == datetime(year, month, day))
-    return [game.id for game in games]
+    return Game.query.filter_by(date=datetime(year, month, day)).all()
 
 
 def insert_all_boxscores(year: int, month: int, day: int):
@@ -76,25 +65,11 @@ def insert_all_boxscores(year: int, month: int, day: int):
         insert_all_games(year, month, day)
     games = get_all_games(year, month, day)
     for game in games:
-        is_game_in_table = not Boxscore.select().where(Boxscore.game == game).exists()
         game_boxscores = parse_boxscores(year, month, day, game)
-        [boxscore.save(force_insert=is_game_in_table)
-         for boxscore in game_boxscores]
+        [db.session.merge(boxscore) for boxscore in game_boxscores]
+        db.session.commit()
 
     logger.info('%s boxscores inserted', date_to_string(year, month, day))
-
-
-def get_all_boxscores(year: int, month: int, day: int):
-    """
-    Return all boxscores at given date
-    """
-    if(not is_date_passed(year, month, day)):
-        return None
-
-    games = get_all_games(year, month, day)
-    boxscores = Boxscore.select().where(
-        Boxscore.game.in_(games)).order_by(Boxscore.ttfl_score.desc())
-    return boxscores
 
 
 def season_catch_up():

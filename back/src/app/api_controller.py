@@ -2,8 +2,9 @@ import json
 from datetime import datetime
 from flask import abort, Blueprint, jsonify, Response, url_for
 from peewee import fn
+from sqlalchemy.sql import func
 from app.db_models import Boxscore, Game, Player, Team
-from app.db_controller import get_all_boxscores
+from app.services.utils import is_date_passed
 
 api_controller = Blueprint('api_controller', __name__)
 api = '/api'
@@ -19,10 +20,10 @@ def get_teams():
     """
     Return all current nba teams
     """
-    all_teams = Team.select().dicts()
+    all_teams = Team.query.all()
     if all_teams:
         json_response = build_valid_json(
-            [team for team in all_teams])
+            [team.serialize() for team in all_teams])
         return build_response(json_response, 200)
     else:
         json_response = build_error_json('No team were found')
@@ -34,9 +35,9 @@ def get_team_by_id(id: int):
     """
     Return team corresponding to given id
     """
-    team = Team.select().where(Team.id == id)
+    team = Team.query.filter_by(_id=id).first()
     if team:
-        json_response = build_valid_json(team.get().__dict__['__data__'])
+        json_response = build_valid_json(team.serialize())
         return build_response(json_response, 200)
     else:
         json_response = build_error_json('No team were found')
@@ -48,10 +49,10 @@ def get_players():
     """
     Return all current nba players
     """
-    all_players = Player.select().order_by(Player.last_name).dicts()
+    all_players = Player.query.all()
     if all_players:
         json_response = build_valid_json(
-            [player for player in all_players])
+            [player.serialize() for player in all_players])
         return build_response(json_response, 200)
     else:
         json_response = build_error_json('No player were found')
@@ -63,9 +64,9 @@ def get_player_by_id(id: int):
     """
     Return player corresponding to given id
     """
-    player = Player.select().where(Player.id == id)
+    player = Player.query.filter_by(_id=id).first()
     if player:
-        json_response = build_valid_json(player.get().__dict__['__data__'])
+        json_response = build_valid_json(player.serialize())
         return build_response(json_response, 200)
     else:
         json_response = build_error_json('No player found')
@@ -77,11 +78,12 @@ def get_player_by_name(name: str):
     """
     Return a player or a list of players with corresponding name
     """
-    players = Player.select().where((Player.first_name.contains(name))
-                                    | (Player.last_name.contains(name))).dicts()
+    players = Player.query\
+        .filter((Player.first_name.like("%{}%".format(name)))
+                | (Player.last_name.like("%{}%".format(name)))).all()
     if players:
         json_response = build_valid_json(
-            [player for player in players])
+            [player.serialize() for player in players])
         return build_response(json_response, 200)
     else:
         json_response = build_error_json('No player found')
@@ -93,10 +95,10 @@ def get_team_players(id: int):
     """
     Return all players in given team
     """
-    players = Player.select().where(Player.team == id).dicts()
+    players = Player.query.filter_by(team_id=id).all()
     if players:
         json_response = build_valid_json(
-            [player for player in players])
+            [player.serialize() for player in players])
         return build_response(json_response, 200)
     else:
         json_response = build_error_json('No team found')
@@ -108,11 +110,11 @@ def get_all_ttfl_perfs_player(id: int):
     """
     Return all ttfl score for given player
     """
-    perfs = Boxscore.select(Boxscore.ttfl_score, Game.date).join(
-        Game).where(Boxscore.player == id).order_by(Game.date.desc()).dicts()
+    perfs = Boxscore.query.filter_by(player_id=id)\
+        .join(Boxscore.game).order_by(Game.date.desc()).all()
     if perfs:
         json_response = build_valid_json(
-            [perf for perf in perfs])
+            [{"ttfl_score": perf.ttfl_score, "date": perf.game.date} for perf in perfs])
         return build_response(json_response, 200)
     else:
         json_response = build_error_json('Player not found')
@@ -124,14 +126,16 @@ def get_perfs_ttfl_between_dates(id, start_date, end_date):
     """
     Return all player ttfl score between given dates
     """
-    start_date = datetime.strptime(start_date, '%Y%m%d')
-    end_date = datetime.strptime(end_date, '%Y%m%d')
+    if(start_date > end_date):
+        json_response = build_error_json('Start date is after end date')
+        abort(build_response(json_response, 404))
 
-    perfs = Boxscore.select(Boxscore.ttfl_score, Game.date).join(Game).where((Boxscore.player == id) & (
-        Game.date.between(start_date, end_date))).order_by(Game.date.desc()).dicts()
+    perfs = Boxscore.query.filter_by(player_id=id)\
+        .join(Boxscore.game).filter(Game.date.between(start_date, end_date)).all()
+
     if perfs:
         json_response = build_valid_json(
-            [perf for perf in perfs])
+            [{"ttfl_score": perf.ttfl_score, "date": perf.game.date} for perf in perfs])
         return build_response(json_response, 200)
     else:
         json_response = build_error_json('Player not found')
@@ -143,12 +147,22 @@ def get_avg_ttfl_player_between_dates(id, start_date, end_date):
     """
     Return average player ttfl score between given dates
     """
-    ttfl_avg = Boxscore.select(Boxscore.player, fn.AVG(Boxscore.ttfl_score).alias(
-        'ttfl_avg')).join(Game).where((Boxscore.player == id) & (Game.date.between(start_date, end_date))).dicts()
+    if(start_date > end_date):
+        json_response = build_error_json('Start date is after end date')
+        abort(build_response(json_response, 404))
 
-    if ttfl_avg:
+    query = Boxscore.query.filter_by(player_id=id).\
+        join(Boxscore.game).\
+        filter(Game.date.between(start_date, end_date)).\
+        with_entities(Boxscore, func.avg(
+            Boxscore.ttfl_score).label('ttfl_avg')).first()
+
+    if query:
         # selecting first element
-        json_response = build_valid_json(ttfl_avg[0])
+        boxscore = query[0]
+        json_response = build_valid_json(
+            {'player_id': boxscore.player_id, 'first_name': boxscore.player.first_name,
+             'last_name': boxscore.player.last_name, 'ttfl_avg': query[1]})
         return build_response(json_response, 200)
     else:
         json_response = build_error_json(
@@ -161,12 +175,16 @@ def get_player_avg_stats(id: int):
     """
     Return player average stats (minutes, points, rebounds, assists, steal, blocks, ttfl_score)
     """
-    player = Boxscore.select(Player.last_name, Player.first_name, Player.mpg, Player.ppg, Player.rpg, Player.apg, Player.spg,
-                             Player.bpg, fn.AVG(Boxscore.ttfl_score).alias('ttflpg')).where(Boxscore.player == id).join(Player).dicts()
+    query = Boxscore.query.filter_by(player_id=id)\
+        .with_entities(Boxscore, func.avg(
+            Boxscore.ttfl_score).label('ttfl_avg')).first()
 
-    if player:
+    if query:
+        boxscore = query[0]
         # selecting first element
-        json_response = build_valid_json(player[0])
+        json_response = build_valid_json(
+            {'player_id': boxscore.player_id, 'first_name': boxscore.player.first_name,
+             'last_name': boxscore.player.last_name, 'ttfl_avg': query[1]})
         return build_response(json_response, 200)
     else:
         json_response = build_error_json(
@@ -180,20 +198,23 @@ def get_boxscores(year: int, month: int, day: int):
     Return all boxscores at given date
     """
     try:
-        datetime(year, month, day)
+        date = datetime(year, month, day)
     except ValueError:
         json_response = build_error_json('Invalid date')
         abort(build_response(json_response, 404))
 
-    all_boxscores = get_all_boxscores(year, month, day).dicts()
-    if all_boxscores:
-        json_response = build_valid_json(
-            [boxscore for boxscore in all_boxscores])
-        return build_response(json_response, 200)
-    else:
-        json_response = build_error_json(
-            'Impossible to get boxscores with a date in the future')
+    if not is_date_passed(year, month, day):
+        json_response = build_error_json('Date in the future')
         abort(build_response(json_response, 404))
+
+    boxscores = Boxscore.query\
+        .join(Boxscore.game)\
+        .filter(Game.date == date).order_by(Boxscore.ttfl_score.desc())
+
+    if boxscores:
+        json_response = build_valid_json(
+            [boxscore.serialize(include_player=True) for boxscore in boxscores])
+        return build_response(json_response, 200)
 
 
 @api_controller.route(api+'/boxscores/player/<int:player>')
@@ -201,9 +222,10 @@ def get_player_boxscores(player):
     """
     Return all given player boxscores
     """
-    boxscores = Boxscore.select().where(Boxscore.player == player).dicts()
+    boxscores = Boxscore.query.filter_by(player_id=player).all()
     if boxscores:
-        json_response = build_valid_json([boxscore for boxscore in boxscores])
+        json_response = build_valid_json(
+            [boxscore.serialize() for boxscore in boxscores])
         return build_response(json_response, 200)
     else:
         json_response = build_error_json(
@@ -222,14 +244,19 @@ def get_player_night_boxscore(player, year, month, day):
         json_response = build_error_json('Invalid date')
         abort(build_response(json_response, 404))
 
-    boxscore = Boxscore.select().join(Game).where(
-        (Boxscore.player == player) & (Game.date == date)).get()
+    if not is_date_passed(year, month, day):
+        json_response = build_error_json('Date in the future')
+        abort(build_response(json_response, 404))
+
+    boxscore = Boxscore.query.filter_by(player_id=player)\
+        .join(Boxscore.game)\
+        .filter(Game.date == date).first()
     if boxscore:
-        json_response = build_valid_json(boxscore.__dict__['__data__'])
+        json_response = build_valid_json(boxscore.serialize())
         return build_response(json_response, 200)
     else:
         json_response = build_error_json(
-            'Could not get boxscores')
+            'Could not get boxscore')
         abort(build_response(json_response, 404))
 
 
@@ -244,10 +271,18 @@ def get_top_ttfl(year, month, day):
         json_response = build_error_json('Invalid date')
         abort(build_response(json_response, 404))
 
-    boxscores = Boxscore.select(Boxscore.ttfl_score, Player.id, Player.first_name, Player.last_name).join(Game).switch(Boxscore).join(Player).where(
-        Game.date == date).order_by(Boxscore.ttfl_score.desc()).limit(20).dicts()
+    if not is_date_passed(year, month, day):
+        json_response = build_error_json('Date in the future')
+        abort(build_response(json_response, 404))
+
+    boxscores = Boxscore.query.join(Boxscore.game)\
+        .filter(Game.date == date)\
+        .order_by(Boxscore.ttfl_score.desc())\
+        .limit(20)
     if boxscores:
-        json_response = build_valid_json([boxscore for boxscore in boxscores])
+        json_response = build_valid_json(
+            [{"ttfl_score": boxscore.ttfl_score, "player_id": boxscore.player_id,
+              "first_name": boxscore.player.first_name, "last_name": boxscore.player.last_name} for boxscore in boxscores])
         return build_response(json_response, 200)
     else:
         json_response = build_error_json(

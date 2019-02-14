@@ -29,3 +29,12 @@ def format_stat(stat):
     if not stat:
         return 0
     return int(stat)
+
+
+def format_avg_stat(stat):
+    """
+    Parse average stat to float or return 0 if stat is unsepcified
+    """
+    if not stat:
+        return 0
+    return float(stat)
