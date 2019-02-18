@@ -1,7 +1,6 @@
 import json
 from datetime import datetime
 from flask import abort, Blueprint, jsonify, Response, url_for
-from peewee import fn
 from sqlalchemy.sql import func
 from app.db_models import Boxscore, Game, Player, Team
 from app.services.utils import is_date_passed

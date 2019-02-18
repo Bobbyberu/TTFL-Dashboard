@@ -15,6 +15,16 @@ class Team(db.Model):
     wins = db.Column(db.Integer)
     losses = db.Column(db.Integer)
 
+    def __init__(self, id, city, name, abbreviation, conference, division, wins, losses):
+        self._id = id
+        self.city = city
+        self.name = name
+        self.abbreviation = abbreviation
+        self.conference = conference
+        self.division = division
+        self.wins = wins
+        self.losses = losses
+
     def __repr__(self):
         return '<Team %r>' % self.name
 
