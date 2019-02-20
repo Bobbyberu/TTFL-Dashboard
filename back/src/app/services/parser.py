@@ -87,7 +87,7 @@ def parse_team(id_team, teams):
         # only the first row_set contains player information
         data = row_set[0]
         logger.info('creating {}'.format(data[headers['TEAM_NAME']]))
-        team = Team(_id=int(data[headers['TEAM_ID']]), city=data[headers['TEAM_CITY']], name=data[headers['TEAM_NAME']], abbreviation=data[headers['TEAM_ABBREVIATION']],
+        team = Team(id=int(data[headers['TEAM_ID']]), city=data[headers['TEAM_CITY']], name=data[headers['TEAM_NAME']], abbreviation=data[headers['TEAM_ABBREVIATION']],
                     conference=data[headers['TEAM_CONFERENCE']], division=data[headers['TEAM_DIVISION']], wins=int(data[headers['W']]), losses=int(data[headers['L']]))
         teams.append(team)
     return teams

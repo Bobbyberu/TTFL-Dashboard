@@ -82,21 +82,25 @@ def season_catch_up():
     season_debut_date = datetime(
         season_debut_year, season_debut_month, season_debut_day)
 
+    # get all star weekend dates in order to ignore games played at these dates
+    all_star_debut, all_star_end = get_all_star_weekend_dates()
+
     # get number of day passed since season start
     day_passed = int((datetime.now() - season_debut_date).days)
 
     for i in range(day_passed):
         #season_debut_date + timedelta(i)
         current_date = season_debut_date + timedelta(i)
-        insert_all_boxscores(
-            current_date.year, current_date.month, current_date.day)
+
+        if not all_star_debut <= current_date <= all_star_end:
+            insert_all_boxscores(
+                current_date.year, current_date.month, current_date.day)
 
 
-def initialize_database():
+def populate_database():
     """
     Function called at server first start, to create all tables and get data at given date
     """
-    create_tables()
     insert_all_teams()
     insert_all_players()
     season_catch_up()
@@ -110,7 +114,13 @@ def date_to_string(year, month, day):
     return str(day) + separator + str(month) + separator + str(year)
 
 
-def test():
-    test = Boxscore.select().where(Boxscore.player == 2544).dicts()
+def get_all_star_weekend_dates():
+    all_star_debut = datetime(int(APIProperty('all_star_debut_year')),
+                              int(APIProperty('all_star_debut_month')),
+                              int(APIProperty('all_star_debut_day')))
 
-    print([print(row) for row in test])
+    all_star_end = datetime(int(APIProperty('all_star_end_year')),
+                            int(APIProperty('all_star_end_month')),
+                            int(APIProperty('all_star_end_day')))
+
+    return all_star_debut, all_star_end

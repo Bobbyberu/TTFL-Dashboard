@@ -3,12 +3,13 @@ from app.api_controller import api_controller
 import time
 from urllib import request
 from app.db_models import db
+from app.db_controller import populate_database, season_catch_up
 from app.services.scheduler import init_scheduler
 from app.services.logger import getLogger
-from config import TEST_DATABASE, PROD_DATABASE, UNIT_TEST_DATABASE
+from config import PROD_DATABASE, UNIT_TEST_DATABASE
 
 
-def wipe_db():
+def wipe_db(db):
     """
     Drop all db tables and recreate clean db
     """

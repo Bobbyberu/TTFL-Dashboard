@@ -1,5 +1,5 @@
 import unittest
-from unit_test import test_team
+from unit_test import test_team, test_player
 
 
 def suite():
@@ -8,6 +8,7 @@ def suite():
     """
     suite = unittest.TestSuite()
     suite.addTest(test_team.suite())
+    suite.addTest(test_player.suite())
     return suite
 
 

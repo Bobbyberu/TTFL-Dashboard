@@ -125,6 +125,13 @@ def get_perfs_ttfl_between_dates(id, start_date, end_date):
     """
     Return all player ttfl score between given dates
     """
+    try:
+        start_date = datetime.strptime(start_date, '%Y%m%d')
+        end_date = datetime.strptime(end_date, '%Y%m%d')
+    except ValueError:
+        json_response = build_error_json('Invalid date')
+        abort(build_response(json_response, 404))
+
     if(start_date > end_date):
         json_response = build_error_json('Start date is after end date')
         abort(build_response(json_response, 404))
@@ -146,6 +153,13 @@ def get_avg_ttfl_player_between_dates(id, start_date, end_date):
     """
     Return average player ttfl score between given dates
     """
+    try:
+        start_date = datetime.strptime(start_date, '%Y%m%d')
+        end_date = datetime.strptime(end_date, '%Y%m%d')
+    except ValueError:
+        json_response = build_error_json('Invalid date')
+        abort(build_response(json_response, 404))
+
     if(start_date > end_date):
         json_response = build_error_json('Start date is after end date')
         abort(build_response(json_response, 404))
@@ -156,7 +170,7 @@ def get_avg_ttfl_player_between_dates(id, start_date, end_date):
         with_entities(Boxscore, func.avg(
             Boxscore.ttfl_score).label('ttfl_avg')).first()
 
-    if query:
+    if query[0] and query[1]:
         # selecting first element
         boxscore = query[0]
         json_response = build_valid_json(
@@ -174,16 +188,18 @@ def get_player_avg_stats(id: int):
     """
     Return player average stats (minutes, points, rebounds, assists, steal, blocks, ttfl_score)
     """
-    query = Boxscore.query.filter_by(player_id=id)\
-        .with_entities(Boxscore, func.avg(
+    query_avg_ttfl = Boxscore.query.filter_by(player_id=id)\
+        .with_entities(func.avg(
             Boxscore.ttfl_score).label('ttfl_avg')).first()
 
-    if query:
-        boxscore = query[0]
-        # selecting first element
-        json_response = build_valid_json(
-            {'player_id': boxscore.player_id, 'first_name': boxscore.player.first_name,
-             'last_name': boxscore.player.last_name, 'ttfl_avg': query[1]})
+    player = Player.query.filter_by(_id=id).first()
+
+    if player and query_avg_ttfl:
+        response = player.serialize()
+        # selecting first element as ttfl average
+        response['avg_ttfl'] = query_avg_ttfl[0]
+
+        json_response = build_valid_json(response)
         return build_response(json_response, 200)
     else:
         json_response = build_error_json(
