@@ -89,7 +89,6 @@ def season_catch_up():
     day_passed = int((datetime.now() - season_debut_date).days)
 
     for i in range(day_passed):
-        #season_debut_date + timedelta(i)
         current_date = season_debut_date + timedelta(i)
 
         if not all_star_debut <= current_date <= all_star_end:
