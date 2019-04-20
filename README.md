@@ -1,4 +1,4 @@
-[BuildStatus](https://travis-ci.com/Bobbyberu/TTFL-Dashboard.svg?branch=develop)
+![BuildStatus](https://travis-ci.com/Bobbyberu/TTFL-Dashboard.svg?branch=develop)
 
 # TTFL-Dashboard
 
