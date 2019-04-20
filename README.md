@@ -1,3 +1,5 @@
+[BuildStatus](https://travis-ci.com/Bobbyberu/TTFL-Dashboard.svg?branch=develop)
+
 # TTFL-Dashboard
 
 ## Application to display stats and graphs about nba stats, including individual players' TTFL Stats
