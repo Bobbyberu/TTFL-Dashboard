@@ -103,7 +103,9 @@ def parse_all_players():
     all_players = raw_players['league']['standard']
     all_player_parsed = []
     for player in all_players:
-        all_player_parsed.append(parse_player(player))
+        parsed_player = parse_player(player)
+        if(parsed_player is not None):
+            all_player_parsed.append(parsed_player)
     return all_player_parsed
 
 

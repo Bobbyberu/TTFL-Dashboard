@@ -82,11 +82,17 @@ def season_catch_up():
     season_debut_date = datetime(
         season_debut_year, season_debut_month, season_debut_day)
 
+    season_end_year = int(APIProperty('season_end_year'))
+    season_end_month = int(APIProperty('season_end_month'))
+    season_end_day = int(APIProperty('season_end_day'))
+    season_end_date = datetime(
+        season_end_year, season_end_month, season_end_day)
+
     # get all star weekend dates in order to ignore games played at these dates
     all_star_debut, all_star_end = get_all_star_weekend_dates()
 
     # get number of day passed since season start
-    day_passed = int((datetime.now() - season_debut_date).days)
+    day_passed = int((season_end_date - season_debut_date).days)
 
     for i in range(day_passed):
         current_date = season_debut_date + timedelta(i)

@@ -275,8 +275,26 @@ def get_player_night_boxscore(player, year, month, day):
         abort(build_response(json_response, 404))
 
 
+@api_controller.route(api+'/boxscores/topttfl')
+def get_top_ttfl():
+    results = Boxscore.query\
+        .with_entities(Boxscore, func.avg(Boxscore.ttfl_score).label('ttfl_avg'))\
+        .group_by(Boxscore.player_id)\
+        .order_by(func.avg(Boxscore.ttfl_score).desc())\
+        .limit(20)
+    if results:
+        json_response = build_valid_json(
+            [{"ttflpg": result.ttfl_avg, "first_name": result[0].player.first_name,
+              "last_name": result[0].player.last_name} for result in results])
+        return build_response(json_response, 200)
+    else:
+        json_response = build_error_json(
+            'Could not get players')
+        abort(build_response(json_response, 404))
+
+
 @api_controller.route(api+'/boxscores/topttfl/<int:year>/<int:month>/<int:day>')
-def get_top_ttfl(year, month, day):
+def get_top_ttfl_given_date(year, month, day):
     """
     Return best 20 ttfl performances at given date
     """

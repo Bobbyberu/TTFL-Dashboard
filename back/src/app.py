@@ -1,4 +1,6 @@
-from app import create_app
+from app import create_app, wipe_db
+from app.db_models import db
+from app.db_controller import populate_database
 
 print("""  
   _______ _______ ______ _        _____            _     _                         _ 
@@ -11,4 +13,6 @@ print("""
 
 if __name__ == '__main__':
     app = create_app()
+    # wipe_db(db)
+    # populate_database()
     app.run(use_reloader=False)
