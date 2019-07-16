@@ -284,8 +284,8 @@ def get_top_ttfl():
         .limit(20)
     if results:
         json_response = build_valid_json(
-            [{"ttflpg": result.ttfl_avg, "first_name": result[0].player.first_name,
-              "last_name": result[0].player.last_name} for result in results])
+            [{"player_id": result[0].player._id, "ttfl_score": result.ttfl_avg,
+              "first_name": result[0].player.first_name, "last_name": result[0].player.last_name} for result in results])
         return build_response(json_response, 200)
     else:
         json_response = build_error_json(
@@ -314,7 +314,7 @@ def get_top_ttfl_given_date(year, month, day):
         .limit(20)
     if boxscores:
         json_response = build_valid_json(
-            [{"ttfl_score": boxscore.ttfl_score, "player_id": boxscore.player_id,
+            [{"player_id": boxscore.player_id, "ttfl_score": boxscore.ttfl_score,
               "first_name": boxscore.player.first_name, "last_name": boxscore.player.last_name} for boxscore in boxscores])
         return build_response(json_response, 200)
     else:

@@ -1,4 +1,5 @@
 from flask import Flask, abort
+from flask_cors import CORS
 from app.api_controller import api_controller
 import time
 from urllib import request
@@ -25,6 +26,7 @@ def create_app():
     Create app to launch application
     """
     app = Flask(__name__)
+    CORS(app)
     app.config['ENV'] = 'development'
     app.config['DEBUG'] = True
 
