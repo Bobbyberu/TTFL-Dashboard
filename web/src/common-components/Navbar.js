@@ -10,10 +10,11 @@ import List from "@material-ui/core/List/List";
 import ListItem from "@material-ui/core/ListItem/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
+import Menu from "@material-ui/icons/Menu";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
 
-import Menu from "@material-ui/icons/Menu";
+import Emoji from "./Emoji";
 
 const styles = theme => ({
   navbar: {
@@ -70,9 +71,7 @@ class Navbar extends Component {
           <Link to="/nightscores" className={classes.link}>
             <ListItem button>
               <ListItemIcon className={classes.sectionIcon}>
-                <span role="img" aria-label="fire">
-                  🔥
-                </span>
+                <Emoji emoji="🔥" label="fire" />
               </ListItemIcon>
               <ListItemText>Scores de la nuit</ListItemText>
             </ListItem>
@@ -81,9 +80,7 @@ class Navbar extends Component {
           <Link to="/games" className={classes.link}>
             <ListItem button>
               <ListItemIcon className={classes.sectionIcon}>
-                <span role="img" aria-label="basketball">
-                  🏀
-                </span>
+                <Emoji emoji="🏀" label="basketball" />
               </ListItemIcon>
               <ListItemText>Matchs</ListItemText>
             </ListItem>
@@ -92,9 +89,7 @@ class Navbar extends Component {
           <Link to="/players" className={classes.link}>
             <ListItem button>
               <ListItemIcon className={classes.sectionIcon}>
-                <span role="img" aria-label="bearded man">
-                  🧔
-                </span>
+                <Emoji emoji="🧔" label="bearded man" />
               </ListItemIcon>
               <ListItemText>Joueurs</ListItemText>
             </ListItem>
@@ -103,9 +98,7 @@ class Navbar extends Component {
           <Link to="/teams" className={classes.link}>
             <ListItem button>
               <ListItemIcon className={classes.sectionIcon}>
-                <span role="img" aria-label="house">
-                  🏠
-                </span>
+                <Emoji emoji="🏠" label="house" />
               </ListItemIcon>
               <ListItemText>Équipes</ListItemText>
             </ListItem>
@@ -114,9 +107,7 @@ class Navbar extends Component {
           <Link to="/averages" className={classes.link}>
             <ListItem button>
               <ListItemIcon className={classes.sectionIcon}>
-                <span role="img" aria-label="bar chart">
-                  📊
-                </span>
+                <Emoji emoji="📊" label="bar chart" />
               </ListItemIcon>
               <ListItemText>Stats</ListItemText>
             </ListItem>
