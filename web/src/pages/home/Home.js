@@ -1,10 +1,10 @@
 import React, { Component } from "react";
+import { withStyles } from "@material-ui/core/styles";
 import BoxscoreService from "../../services/BoxscoreService";
 
 import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
 import Typography from "@material-ui/core/Typography";
-import { withStyles } from "@material-ui/core/styles";
 
 import Emoji from "../../common-components/Emoji";
 import Navbar from "../../common-components/Navbar";
@@ -15,9 +15,7 @@ const styles = {
     color: "#BC0001"
   },
   table: {
-    margin: 10,
-    paddingLeft: 20,
-    paddingRight: 20
+    margin: 10
   },
   tableTitle: {
     paddingTop: 10,
@@ -33,8 +31,8 @@ class Home extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      top_players_season: [],
-      top_players_night: []
+      top_players_season: null,
+      top_players_night: null
     };
   }
 
@@ -87,9 +85,14 @@ class Home extends Component {
                 id="tableTitle"
                 className={classes.tableTitle}
               >
-                <Emoji emoji="🔥" label="fire" /> Scores de la nuit
+                <Emoji emoji="🔥" label="fire" /> Scores de la nuit{" "}
+                <Emoji emoji="🔥" label="fire" />
               </Typography>
-              <ScoreTable data={this.state.top_players_night} average={false} />
+              <ScoreTable
+                data={this.state.top_players_night}
+                average={false}
+                short={true}
+              />
               <p className={classes.extraLink}>
                 <a href="/nightscores">>> Tous les scores de la nuit</a>
               </p>
@@ -102,9 +105,14 @@ class Home extends Component {
                 id="tableTitle"
                 className={classes.tableTitle}
               >
-                <Emoji emoji="⭐" label="star" /> Meilleurs joueurs de la saison
+                <Emoji emoji="⭐" label="star" /> Meilleurs joueurs de la saison{" "}
+                <Emoji emoji="⭐" label="star" />
               </Typography>
-              <ScoreTable data={this.state.top_players_season} average={true} />
+              <ScoreTable
+                data={this.state.top_players_season}
+                average={true}
+                short={true}
+              />
               <p className={classes.extraLink}>
                 <a href="/averages">>> Toutes les moyennes des joueurs</a>
               </p>

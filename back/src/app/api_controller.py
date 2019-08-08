@@ -323,6 +323,35 @@ def get_top_ttfl_given_date(year, month, day):
         abort(build_response(json_response, 404))
 
 
+@api_controller.route(api+'/boxscores/allttfl/<int:year>/<int:month>/<int:day>')
+def get_ttfl_night_scores(year, month, day):
+    """
+    Return all ttfl performance at one given night
+    """
+    try:
+        date = datetime(year, month, day)
+    except ValueError:
+        json_response = build_error_json('Invalid date')
+        abort(build_response(json_response, 404))
+
+    if not is_date_passed(year, month, day):
+        json_response = build_error_json('Date in the future')
+        abort(build_response(json_response, 404))
+
+    boxscores = Boxscore.query.join(Boxscore.game)\
+        .filter(Game.date == date)\
+        .order_by(Boxscore.ttfl_score.desc())
+    if boxscores:
+        json_response = build_valid_json(
+            [{"player_id": boxscore.player_id, "ttfl_score": boxscore.ttfl_score,
+                "first_name": boxscore.player.first_name, "last_name": boxscore.player.last_name} for boxscore in boxscores])
+        return build_response(json_response, 200)
+    else:
+        json_response = build_error_json(
+            'Could not get boxscores')
+        abort(build_response(json_response, 404))
+
+
 def build_response(json_response, status):
     """
     Build response object to be returned by api

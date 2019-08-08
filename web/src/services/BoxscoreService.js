@@ -11,5 +11,10 @@ export default {
     return api().get(
       prefix + "topttfl/" + year + separator + month + separator + day
     );
+  },
+  getNightAllTTFL(year, month, day) {
+    return api().get(
+      prefix + "allttfl/" + year + separator + month + separator + day
+    );
   }
 };
