@@ -276,12 +276,35 @@ def get_player_night_boxscore(player, year, month, day):
 
 
 @api_controller.route(api+'/boxscores/topttfl')
-def get_top_ttfl():
+def get_top_20_ttfl():
+    """
+    Return 20 best TTFL points averages for current season
+    """
     results = Boxscore.query\
         .with_entities(Boxscore, func.avg(Boxscore.ttfl_score).label('ttfl_avg'))\
         .group_by(Boxscore.player_id)\
         .order_by(func.avg(Boxscore.ttfl_score).desc())\
         .limit(20)
+    if results:
+        json_response = build_valid_json(
+            [{"player_id": result[0].player._id, "ttfl_score": result.ttfl_avg,
+              "first_name": result[0].player.first_name, "last_name": result[0].player.last_name} for result in results])
+        return build_response(json_response, 200)
+    else:
+        json_response = build_error_json(
+            'Could not get players')
+        abort(build_response(json_response, 404))
+
+
+@api_controller.route(api+'/boxscores/avg/ttfl')
+def get_all_avg_ttfl():
+    """
+    Return all TTFL points averages for current season
+    """
+    results = Boxscore.query\
+        .with_entities(Boxscore, func.avg(Boxscore.ttfl_score).label('ttfl_avg'))\
+        .group_by(Boxscore.player_id)\
+        .order_by(func.avg(Boxscore.ttfl_score).desc())
     if results:
         json_response = build_valid_json(
             [{"player_id": result[0].player._id, "ttfl_score": result.ttfl_avg,

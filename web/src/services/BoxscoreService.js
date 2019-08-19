@@ -16,5 +16,8 @@ export default {
     return api().get(
       prefix + "allttfl/" + year + separator + month + separator + day
     );
+  },
+  getTTFLSeasonAverages() {
+    return api().get(prefix + "avg/ttfl");
   }
 };

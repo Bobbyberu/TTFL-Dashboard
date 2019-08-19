@@ -1,12 +1,9 @@
 import React, { Component } from "react";
 import { withStyles } from "@material-ui/core/styles";
 import BoxscoreService from "../../services/BoxscoreService";
-
 import MaterialTable from "material-table";
 import Paper from "@material-ui/core/Paper";
-
 import Navbar from "../../common-components/Navbar";
-import ScoreTable from "../../common-components/score-table/ScoreTable";
 
 const styles = {
   table: {
