@@ -7,6 +7,7 @@ export default class Games extends Component {
       <div>
         <Navbar />
         <h1>Games</h1>
+        <h2>COMING SOON</h2>
       </div>
     );
   }

@@ -7,6 +7,7 @@ export default class Teams extends Component {
       <div>
         <Navbar />
         <h1>Teams</h1>
+        <h2>COMING SOON</h2>
       </div>
     );
   }

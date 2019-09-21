@@ -68,6 +68,15 @@ class Navbar extends Component {
       <div className={classes.list}>
         <h4 className={classes.drawerTitle}>Sections</h4>
         <List>
+          <Link to="/" className={classes.link}>
+            <ListItem button>
+              <ListItemIcon className={classes.sectionIcon}>
+                <Emoji emoji="🏠" label="home" />
+              </ListItemIcon>
+              <ListItemText>Accueil</ListItemText>
+            </ListItem>
+          </Link>
+          <Divider variant="middle" />
           <Link to="/nightscores" className={classes.link}>
             <ListItem button>
               <ListItemIcon className={classes.sectionIcon}>
@@ -77,32 +86,32 @@ class Navbar extends Component {
             </ListItem>
           </Link>
           <Divider variant="middle" />
-          <Link to="/games" className={classes.link}>
-            <ListItem button>
-              <ListItemIcon className={classes.sectionIcon}>
+          <ListItem button disabled={true}>
+            <ListItemIcon className={classes.sectionIcon}>
+              <Link to="/games" className={classes.link}>
                 <Emoji emoji="🏀" label="basketball" />
-              </ListItemIcon>
-              <ListItemText>Matchs</ListItemText>
-            </ListItem>
-          </Link>
+              </Link>
+            </ListItemIcon>
+            <ListItemText>Matchs</ListItemText>
+          </ListItem>
           <Divider variant="middle" />
-          <Link to="/players" className={classes.link}>
-            <ListItem button>
-              <ListItemIcon className={classes.sectionIcon}>
+          <ListItem button disabled={true}>
+            <ListItemIcon className={classes.sectionIcon}>
+              <Link to="/players" className={classes.link}>
                 <Emoji emoji="🧔" label="bearded man" />
-              </ListItemIcon>
-              <ListItemText>Joueurs</ListItemText>
-            </ListItem>
-          </Link>
+              </Link>
+            </ListItemIcon>
+            <ListItemText>Joueurs</ListItemText>
+          </ListItem>
           <Divider variant="middle" />
-          <Link to="/teams" className={classes.link}>
-            <ListItem button>
-              <ListItemIcon className={classes.sectionIcon}>
-                <Emoji emoji="🏠" label="house" />
-              </ListItemIcon>
-              <ListItemText>Équipes</ListItemText>
-            </ListItem>
-          </Link>
+          <ListItem button disabled={true}>
+            <ListItemIcon className={classes.sectionIcon}>
+              <Link to="/teams" className={classes.link}>
+                <Emoji emoji="🤝" label="handshake" />
+              </Link>
+            </ListItemIcon>
+            <ListItemText>Équipes</ListItemText>
+          </ListItem>
           <Divider variant="middle" />
           <Link to="/averages" className={classes.link}>
             <ListItem button>

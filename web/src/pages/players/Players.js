@@ -7,6 +7,7 @@ export default class Players extends Component {
       <div>
         <Navbar />
         <h1>Players</h1>
+        <h2>COMING SOON</h2>
       </div>
     );
   }
